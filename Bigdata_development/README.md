@@ -2,8 +2,8 @@
 
 ### 目录
 
-- [第1节.大数据概况及Hadoop环境构建](Bigdata_development/chapter01.md) （2022.3.9）
-- [第2节.Apache Hadoop 分布式文件系统](Bigdata_development/chapter02.md) （2022.3.12）
+- [第1节.大数据概况及Hadoop生态系统](Bigdata_development/chapter01.md)
+- [第2节.Hadoop环境构建](Bigdata_development/chapter02.md)
 - [第3节.MapReduce 编程模型基础和实践](Bigdata_development/chapter03.md) （2022.3.16）
 - [第4节.Hive-数据仓库基础](Bigdata_development/chapter04.md) （2022.3.19）
 - [第5节.Hive-数据仓库进阶](Bigdata_development/chapter05.md) （2022.3.23）
