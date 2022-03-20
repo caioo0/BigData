@@ -1,7 +1,6 @@
-# Chapter5 分布式并行编程模型MapReduce
+# MapReduce 编程模型基础和实践
 ---
 
-（本学习笔记来源于[DataWhale-妙趣横生大数据](https://shenhao-stu.github.io/Big-Data/)）
 
 ## 5.1 MapReduce概述
 
