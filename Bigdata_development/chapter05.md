@@ -13,6 +13,14 @@
 
 Hive中的视图和RDBMS中视图的概念一致，都是一组数据的逻辑表示，本质上就是一条select语句的结果集。视图是纯粹的逻辑对象，没有关联的存储(Hive3.0.0引入的物化视图除外)，当查询引用视图时，Hive可以将视图的定义与查询结合起来，例如将查询中的过滤器推送到视图中。
 
+**视图的特点：**
+
+- 一种逻辑结构，通过隐藏虚拟表中的子查询，连接和函数来简化查询
+- Hive视图不存储数据不能物化
+- 创建试图后，立即冻结期架构
+- 如果删除或更改基础表，则查询视图将失败
+- 视图时只读的，不能用作LOAD/INSERT/ALTER的目标
+
 ### 5.1.2 创建视图
 
 ```sql
@@ -80,6 +88,125 @@ ALTER VIEW custom_view SET TBLPROPERTIES ('create'='heibaiying','date'='2019-05-
 ```
 
 ![img](./images/2020-10-19-zy8DWl.jpg)
+
+### 5.1.7 Hive侧视图
+
+- 应用表生成功能，将功能输入和输出连接在一起
+
+  - 在一个复杂的sql查询中，可以生成类似于临时的视图一样的功能。
+  - 使用Lateral view 如果视图是空值的华，那么最终不会有任何输出结果。需要使用Lateral view out
+- lateral view outer
+
+  - 即使输出为空，lateral view outer也会生成结果
+  - 视图为空值，也会展示全部结果
+- explode函数的用法：
+
+  - 参数：接受的是一个集合
+  - 返回值：返回集合的每一个元素
+- lateral view 和 explode的使用场景？
+
+  - explode就是将hive一行中复杂的array或者map结构拆分成多行。
+  - lateral view用于和[split](https://so.csdn.net/so/search?q=split&spm=1001.2101.3001.7020), explode等UDTF一起使用，它能够将一行数据拆成多行数据，在此基础上可以对拆分后的数据进行聚合。lateral view首先为原始表的每行调用UDTF，UDTF会把一行拆分成一或者多行，lateral view再把结果组合，产生一个支持别名表的虚拟表。
+  - explode将复杂结构一行拆成多行，然后再用lateral view做各种聚合。
+
+示例：
+
+```sql
+select * from tb_split; 
+ 
+20141018  aa|bb  7|9|0|3 
+20141019  cc|dd  6|1|8|5 
+ 
+使用方式：select datenu,des,type from tb_split  
+lateral view explode(split(des,"//|")) tb1 as des 
+lateral view explode(split(type,"//|")) tb2 as type 
+执行过程是先执行from到as cloumn的列过程，再执行select 和where后边的语句。
+```
+
+```sql
+   SELECT
+        *
+    FROM
+        ods_aimsen_base_regionhistories lateral VIEW explode(split(ManageBranchNos,'\\}\\{')) tmp
+        AS sub
+```
+
+可以基于explode+lateral view 实现词频统计
+
+```sql
+1. explode基本的功能
+
+select explode(work_place) from employee_external;
+
+2. 查询客户之前工作过的所有地方
+
+select name, explode(work_place) from employee_external;
+
+-- 通过 lateral view 解决这个问题
+
+select name, addr from employee_external lateral view explode(work_place) r1 as
+
+addr;
+
+-- lateral view 无法解决输出为null的问题
+
+select name, addr from employee_external lateral view explode(split(null,',')) a
+
+as addr;
+
+
+-- lateval view outer 可以解决这个问题
+
+select name, addr from employee_external lateral view outer
+
+explode(split(null,',')) a as
+
+addr;
+
+-- support multiple level
+
+SELECT * FROM table_name
+
+LATERAL VIEW explode(col1) myTable1 AS myCol1
+
+LATERAL VIEW explode(myCol1) myTable2 AS myCol2;
+
+-- 案例
+
+select * from work;
+
+work.name work.location
+
+zs beijing,wuhan
+
+lisi shanghai,guangzhou,shenzhshen
+
+select * from work lateal view explode(split(location,',')) a as loc;
+
+work.name work.location work.loc
+
+zs beijing,wuhan beijing
+
+zs beijing,wuhan wuhan
+
+lisi shanghai,guangzhou,shenzhshen shanghai
+
+lisi shanghai,guangzhou,shenzhshen guangzhou
+
+lisi shanghai,guangzhou,shenzhshen shenzhen
+
+select * from work lateal view explode(split(null,',')) a as loc; --result null
+
+select * from work lateal view outer explode(split(null,',')) a as loc;
+
+work.name work.location work.loc
+
+zs beijing,wuhan null
+
+lisi shanghai,guangzhou,shenzhshen null
+
+SELECT INPUT__FILE__NAME,BLOCK__OFFSET__INSIDE__FILE FROM employee_external;
+```
 
 ## 5.2 索引
 
@@ -421,8 +548,6 @@ FROM emp e LEFT OUTER  JOIN  dept d
 ON e.deptno = d.deptno;
 ```
 
-
-
 #### 5.5.3.3 RIGHT OUTER  JOIN
 
 1
@@ -548,3 +673,752 @@ show databases;
 ```sql
 USE database_name;
 ```
+
+#### 5.6.1.3 新建数据库
+
+语法：
+
+```sql
+CREATE (DATABASE|SCHEMA) [IF NOT EXISTS] database_name   --DATABASE|SCHEMA 是等价的
+  [COMMENT database_comment] --数据库注释
+  [LOCATION hdfs_path] --存储在 HDFS 上的位置
+  [WITH DBPROPERTIES (property_name=property_value, ...)]; --指定额外属性
+```
+
+示例：
+
+```sql
+CREATE DATABASE IF NOT EXISTS hive_test
+  COMMENT 'hive database for test'
+  WITH DBPROPERTIES ('create'='heibaiying');
+```
+
+#### 5.6.1.4 查看数据库信息
+
+语法：
+
+```sql
+DESC DATABASE [EXTENDED] db_name; --EXTENDED 表示是否显示额外属性
+```
+
+示例：
+
+```sql
+DESC DATABASE  EXTENDED hive_test;
+```
+
+#### 5.6.1.5 删除数据库
+
+```sql
+DROP (DATABASE|SCHEMA) [IF EXISTS] database_name [RESTRICT|CASCADE];
+```
+
+默认行为是 RESTRICT，如果数据库中存在表则删除失败。要想删除库及其中的表，可以使用 CASCADE 级联删除。
+示例：
+
+```sql
+  DROP DATABASE IF EXISTS hive_test CASCADE;
+```
+
+### 5.6.2. 创建表
+
+#### 5.6.2.1 建表语法
+
+```sql
+CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS] [db_name.]table_name     --表名
+  [(col_name data_type [COMMENT col_comment],
+    ... [constraint_specification])]  --列名 列数据类型
+  [COMMENT table_comment]   --表描述
+  [PARTITIONED BY (col_name data_type [COMMENT col_comment], ...)]  --分区表分区规则
+  [
+    CLUSTERED BY (col_name, col_name, ...) 
+   [SORTED BY (col_name [ASC|DESC], ...)] INTO num_buckets BUCKETS
+  ]  --分桶表分桶规则
+  [SKEWED BY (col_name, col_name, ...) ON ((col_value, col_value, ...), (col_value, col_value, ...), ...)  
+   [STORED AS DIRECTORIES] 
+  ]  --指定倾斜列和值
+  [
+   [ROW FORMAT row_format]  
+   [STORED AS file_format]
+     | STORED BY 'storage.handler.class.name' [WITH SERDEPROPERTIES (...)]  
+  ]  -- 指定行分隔符、存储文件格式或采用自定义存储格式
+  [LOCATION hdfs_path]  -- 指定表的存储位置
+  [TBLPROPERTIES (property_name=property_value, ...)]  --指定表的属性
+  [AS select_statement];   --从查询结果创建表
+```
+
+#### 5.6.2.2 内部表
+
+```sql
+  CREATE TABLE emp(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2),
+    deptno INT)
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
+```
+
+#### 5.6.2.3 外部表
+
+```sql
+  CREATE EXTERNAL TABLE emp_external(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2),
+    deptno INT)
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
+    LOCATION '/hive/emp_external';
+```
+
+使用 desc format emp_external 命令可以查看表的详细信息如下：
+![img](./images/2020-10-19-dA6LOA.jpg)
+
+#### 5.6.2.4 分区表
+
+```sql
+  CREATE EXTERNAL TABLE emp_partition(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2)
+    )
+    PARTITIONED BY (deptno INT)   -- 按照部门编号进行分区
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
+    LOCATION '/hive/emp_partition';
+```
+
+#### 5.6.2.5 分桶表
+
+```sql
+  CREATE EXTERNAL TABLE emp_bucket(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2),
+    deptno INT)
+    CLUSTERED BY(empno) SORTED BY(empno ASC) INTO 4 BUCKETS  --按照员工编号散列到四个 bucket 中
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
+    LOCATION '/hive/emp_bucket';
+```
+
+#### 5.6.2.6 倾斜表
+
+通过指定一个或者多个列经常出现的值（严重偏斜），Hive 会自动将涉及到这些值的数据拆分为单独的文件。在查询时，如果涉及到倾斜值，它就直接从独立文件中获取数据，而不是扫描所有文件，这使得性能得到提升。
+
+```sql
+  CREATE EXTERNAL TABLE emp_skewed(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2)
+    )
+    SKEWED BY (empno) ON (66,88,100)  --指定 empno 的倾斜值 66,88,100
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
+    LOCATION '/hive/emp_skewed';
+```
+
+#### 5.6.2.7 临时表
+
+临时表仅对当前 session 可见，临时表的数据将存储在用户的暂存目录中，并在会话结束后删除。如果临时表与永久表表名相同，则对该表名的任何引用都将解析为临时表，而不是永久表。临时表还具有以下两个限制：
+
+* 不支持分区列；
+* 不支持创建索引。
+
+```sql
+  CREATE TEMPORARY TABLE emp_temp(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2)
+    )
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
+```
+
+#### 5.6.2.8 CTAS创建表
+
+支持从查询语句的结果创建表：
+
+```sql
+CREATE TABLE emp_copy AS SELECT * FROM emp WHERE deptno='20';
+```
+
+#### 5.6.2.9 复制表结构
+
+语法：
+
+```sql
+CREATE [TEMPORARY] [EXTERNAL] TABLE [IF NOT EXISTS] [db_name.]table_name  --创建表表名
+   LIKE existing_table_or_view_name  --被复制表的表名
+   [LOCATION hdfs_path]; --存储位置
+```
+
+示例：
+
+```sql
+CREATE TEMPORARY EXTERNAL TABLE  IF NOT EXISTS  emp_co  LIKE emp
+```
+
+#### 5.6.2.10 加载数据到表
+
+加载数据到表中属于 DML 操作，这里为了方便大家测试，先简单介绍一下加载本地数据到表中：
+
+```sql
+-- 加载数据到 emp 表中
+load data local inpath "/usr/file/emp.txt" into table emp;
+```
+
+其中 emp.txt 的内容如下，你可以直接复制使用，也可以到本仓库的[resources](https://github.com/heibaiying/BigData-Notes/tree/master/resources) 目录下载：
+
+```sql
+7369    SMITH    CLERK    7902    1980-12-17 00:00:00    800.00        20
+7499    ALLEN    SALESMAN    7698    1981-02-20 00:00:00    1600.00    300.00    30
+7521    WARD    SALESMAN    7698    1981-02-22 00:00:00    1250.00    500.00    30
+7566    JONES    MANAGER    7839    1981-04-02 00:00:00    2975.00        20
+7654    MARTIN    SALESMAN    7698    1981-09-28 00:00:00    1250.00    1400.00    30
+7698    BLAKE    MANAGER    7839    1981-05-01 00:00:00    2850.00        30
+7782    CLARK    MANAGER    7839    1981-06-09 00:00:00    2450.00        10
+7788    SCOTT    ANALYST    7566    1987-04-19 00:00:00    1500.00        20
+7839    KING    PRESIDENT        1981-11-17 00:00:00    5000.00        10
+7844    TURNER    SALESMAN    7698    1981-09-08 00:00:00    1500.00    0.00    30
+7876    ADAMS    CLERK    7788    1987-05-23 00:00:00    1100.00        20
+7900    JAMES    CLERK    7698    1981-12-03 00:00:00    950.00        30
+7902    FORD    ANALYST    7566    1981-12-03 00:00:00    3000.00        20
+7934    MILLER    CLERK    7782    1982-01-23 00:00:00    1300.00        10
+```
+
+### 5.6.3 修改表
+
+#### 5.6.3.1 重命名表
+
+语法：
+
+```sql
+ALTER TABLE table_name RENAME TO new_table_name;
+```
+
+示例：
+
+```sql
+ALTER TABLE emp_temp RENAME TO new_emp; --把 emp_temp 表重命名为 new_emp
+```
+
+#### 5.6.3.2 修改列
+
+语法：
+
+````sql
+ALTER TABLE table_name [PARTITION partition_spec] CHANGE [COLUMN] col_old_name col_new_name column_type
+  [COMMENT col_comment] [FIRST|AFTER column_name] [CASCADE|RESTRICT];
+
+````
+
+示例：
+
+```sql
+-- 修改字段名和类型
+ALTER TABLE emp_temp CHANGE empno empno_new INT;
+
+-- 修改字段 sal 的名称 并将其放置到 empno 字段后
+ALTER TABLE emp_temp CHANGE sal sal_new decimal(7,2)  AFTER ename;
+
+-- 为字段增加注释
+ALTER TABLE emp_temp CHANGE mgr mgr_new INT COMMENT 'this is column mgr';
+```
+
+#### 5.6.3.3 新增列
+
+示例：
+
+````sql
+ALTER TABLE emp_temp ADD COLUMNS (address STRING COMMENT 'home address');
+
+````
+
+### 5.6.4 清空表/删除表
+
+#### 5.6.4.1 清空表
+
+语法：
+
+```sql
+-- 清空整个表或表指定分区中的数据
+TRUNCATE TABLE table_name [PARTITION (partition_column = partition_col_value,  ...)];
+```
+
+目前只有内部表才能执行 TRUNCATE 操作，外部表执行时会抛出异常 `Cannot truncate non-managed table XXXX`。
+
+示例：
+
+```sql
+TRUNCATE TABLE emp_mgt_ptn PARTITION (deptno=20);
+```
+
+#### 5.6.4.2 删除表
+
+语法：
+
+```sql
+DROP TABLE [IF EXISTS] table_name [PURGE];
+```
+
+* 内部表：不仅会删除表的元数据，同时会删除 HDFS 上的数据；
+* 外部表：只会删除表的元数据，不会删除 HDFS 上的数据；
+* 删除视图引用的表时，不会给出警告（但视图已经无效了，必须由用户删除或重新创建）。
+
+### 5.6.5 其他命令
+
+#### 5.6.5.1 Describe
+
+查看数据库：
+
+```sql
+DESCRIBE|Desc DATABASE [EXTENDED] db_name;  --EXTENDED 是否显示额外属性
+```
+
+查看表：
+
+```sql
+DESCRIBE|Desc [EXTENDED|FORMATTED] table_name --FORMATTED 以友好的展现方式查看表详情
+```
+
+#### 5.6.5.2 Show
+
+查看数据库列表
+
+```sql
+-- 语法
+SHOW (DATABASES|SCHEMAS) [LIKE 'identifier_with_wildcards'];
+
+-- 示例：
+SHOW DATABASES like 'hive*';
+```
+
+LIKE 子句允许使用正则表达式进行过滤，但是 SHOW 语句当中的 LIKE 子句只支持 `*`（通配符）和 `|`（条件或）两个符号。例如 `employees`，`emp *`，`emp * | * ees`，所有这些都将匹配名为 `employees` 的数据库。
+
+查看表的列表
+
+```sql
+-- 语法
+SHOW TABLES [IN database_name] ['identifier_with_wildcards'];
+
+-- 示例
+SHOW TABLES IN default;
+```
+
+查看视图列表
+
+```sql
+SHOW VIEWS [IN/FROM database_name] [LIKE 'pattern_with_wildcards'];   --仅支持 Hive 2.2.0 +
+```
+
+查看表的分区列表
+
+```sql
+SHOW PARTITIONS table_name;
+```
+
+查看表/视图的创建语句
+
+````sql
+SHOW CREATE TABLE ([db_name.]table_name|view_name);
+````
+
+### 5.6.6 Hive 聚合函数
+
+- 排序：ROW_NUMBER, RANK, DENSE_RANK, NLITE, PERCENT_RANK
+- 统计：COUNT, SUM, AVG MAX, MIN
+- 分析：CUME_DIST, LEAD, LAG, FIRST_VALUE, LAST_VALUE WINDOW clause (窗口的定义) Case Study (案例分析)
+
+```sql
+desc function funcName desc function extended funcName concat_ws：函数用法 collect_set：函数用法 collect_set：返回一个不带重复数据的集合,需要配合group by使用，类似于多行转换为一行
+-- 举个栗子
+--将一张表中特定字段的行进行合并，并且不对重复的数据进行去重如下，数据形式如下，要对from字段进行 进行合并 subtype from id name type null CommonModule 5 3公立内 Distance null CommonModule 4 2公立内 sort
+--concat_ws和collect_set()函数实现（对某列进行去重） 其作用是将多行某些列的多行进行去重合并， 并通过&符 号进行连接，代码如下 select subtype ,concat_ws('&',collect_set(cast(from as string))) from ,concat_ws('&',collect_set(cast(id as string))) id ,concat_ws('&',collect_set(cast(name as string)))name ,concat_ws('&',collect_set(cast(type as string))) type
+from table group by subtype; null CommonModule 4&5 2公立内&3公立内 sort&Distance
+-- 2、concat_ws和collect_list()函数实现（对某列不进行去重） select subtype ,concat_ws('&',collect_list(cast(from as string))) from ,concat_ws('&',collect_list(cast(id as string))) id ,concat_ws('&',collect_list(cast(name as string)))name ,concat_ws('&',collect_list(cast(type as string))) type
+from table group by subtype; null CommonModule&CommonModule 4&5 2公立内&3公立内 sort&Distance
+ ```
+
+- 基本函数的使用
+
+```
+1.查看month 相关的函数 show functions like '*month*' 输出如下:
+2.查看 add_months 函数的用法 desc function add_months; 
+3.查看 add_months 函数的详细说明并举例 desc function extended add_months;
+```
+
+### 5.6.7 Hive Window Functions 语法
+
+- 我们都知道在sql中有一类函数叫做聚合函数,例如sum()、avg()、max()等等,这类函数可以将多行数
+  据按照规则聚集为一行,一般来讲聚集后的行数是要少于聚集前的行数的.但是有时我们想要既显示
+  聚集前的数据,又要显示聚集后的数据,这时我们便引入了窗口函数。
+- 从Hive 0.11.0开始添加，Hive窗口函数是一组特殊
+  的函数，它们扫描多个输入行以计算每个输出值
+- 分析函数功能强大，不受GROUP BY的限制
+- 可以通过它完成复杂的计算和聚合
+
+lag() lead() first_value() last_value()
+
+```
+lag()
+LAG(col,n,DEFAULT) 用于统计窗口内往上第n行值
+第一个参数为列名，第二个参数为往上第n行（可选，默认为1），第三个参数为默认值（当往上n行之内，若当某一行为NULL时候，取默认值，如不指定，则为NULL）
+```
+```
+lead()
+与LAG相反
+LEAD(col,n,DEFAULT) 用于统计窗口内往下第n行值
+第一个参数为列名，第二个参数为往下第n行（可选，默认为1），第三个参数为默认值（当往下第n行为NULL时候，取默认值，如不指定，则为NULL）
+```
+
+```
+first_value()
+取分组内排序后，截止到当前行，第一个值.
+如果不指定ORDER BY，则默认按照记录在文件中的偏移量进行排序，会出现错误的结果
+```
+```
+ast_value()
+取分组内排序后，截止到当前行，最后一个值
+如果不指定ORDER BY，则默认按照记录在文件中的偏移量进行排序，会出现错误的结果
+```
+
+
+## 5.7 DML操作
+
+### 5.7.1 加载文件数据到表
+
+#### 5.7.1.1 语法
+
+```sql
+LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] 
+INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+```
+
+* `LOCAL` 关键字代表从本地文件系统加载文件，省略则代表从 HDFS 上加载文件：
+* 从本地文件系统加载文件时， `filepath` 可以是绝对路径也可以是相对路径 (建议使用绝对路径)；
+* 从 HDFS 加载文件时候，`filepath` 为文件完整的 URL 地址：如 `hdfs://namenode:port/user/hive/project/ data1`
+* `filepath` 可以是文件路径 (在这种情况下 Hive 会将文件移动到表中)，也可以目录路径 (在这种情况下，Hive 会将该目录中的所有文件移动到表中)；
+* 如果使用 OVERWRITE 关键字，则将删除目标表（或分区）的内容，使用新的数据填充；不使用此关键字，则数据以追加的方式加入；
+* 加载的目标可以是表或分区。如果是分区表，则必须指定加载数据的分区；
+* 加载文件的格式必须与建表时使用 `STORED AS` 指定的存储格式相同。
+
+  > 使用建议：
+  >
+  > **不论是本地路径还是 URL 都建议使用完整的** 。虽然可以使用不完整的 URL 地址，此时 Hive 将使用 hadoop 中的 fs.default.name 配置来推断地址，但是为避免不必要的错误，建议使用完整的本地路径或 URL 地址；
+  >
+  > **加载对象是分区表时建议显示指定分区** 。在 Hive 3.0 之后，内部将加载 (LOAD) 重写为 INSERT AS SELECT，此时如果不指定分区，INSERT AS SELECT 将假设最后一组列是分区列，如果该列不是表定义的分区，它将抛出错误。为避免错误，还是建议显示指定分区。
+  >
+
+#### 5.7.1.2 示例
+
+新建分区表：
+
+```sql
+  CREATE TABLE emp_ptn(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2)
+    )
+    PARTITIONED BY (deptno INT)   -- 按照部门编号进行分区
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
+```
+
+从 HDFS 上加载数据到分区表：
+
+````sql
+LOAD DATA  INPATH "hdfs://hadoop001:8020/mydir/emp.txt" OVERWRITE INTO TABLE emp_ptn PARTITION (deptno=20);
+````
+
+> emp.txt 文件可在本仓库的 resources 目录中下载
+
+加载后表中数据如下,分区列 deptno 全部赋值成 20：
+
+![img](./images/2020-10-19-ULIqBH.jpg)
+
+### 5.7.2 查询结果插入到表
+
+#### 5.7.2.1 语法
+
+```sql
+INSERT OVERWRITE TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]]   
+select_statement1 FROM from_statement;
+
+INSERT INTO TABLE tablename1 [PARTITION (partcol1=val1, partcol2=val2 ...)] 
+select_statement1 FROM from_statement;
+```
+
+* Hive 0.13.0 开始，建表时可以通过使用 TBLPROPERTIES（“immutable”=“true”）来创建不可变表 (immutable table) ，如果不可以变表中存在数据，则 INSERT INTO 失败。（注：INSERT OVERWRITE 的语句不受 `immutable` 属性的影响）;
+* 可以对表或分区执行插入操作。如果表已分区，则必须通过指定所有分区列的值来指定表的特定分区；
+* 从 Hive 1.1.0 开始，TABLE 关键字是可选的；
+* 从 Hive 1.2.0 开始 ，可以采用 INSERT INTO tablename(z，x，c1) 指明插入列；
+* 可以将 SELECT 语句的查询结果插入多个表（或分区），称为多表插入。语法如下：
+
+````sql
+  FROM from_statement
+  INSERT OVERWRITE TABLE tablename1 
+  [PARTITION (partcol1=val1, partcol2=val2 ...) [IF NOT EXISTS]] select_statement1
+  [INSERT OVERWRITE TABLE tablename2 [PARTITION ... [IF NOT EXISTS]] select_statement2]
+  [INSERT INTO TABLE tablename2 [PARTITION ...] select_statement2] ...;
+````
+
+#### 5.7.2.2 动态插入分区
+
+```sql
+INSERT OVERWRITE TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) 
+select_statement FROM from_statement;
+
+INSERT INTO TABLE tablename PARTITION (partcol1[=val1], partcol2[=val2] ...) 
+select_statement FROM from_statement;
+```
+
+在向分区表插入数据时候，分区列名是必须的，但是列值是可选的。如果给出了分区列值，我们将其称为静态分区，否则它是动态分区。动态分区列必须在 SELECT 语句的列中最后指定，并且与它们在 PARTITION() 子句中出现的顺序相同。
+
+注意：Hive 0.9.0 之前的版本动态分区插入是默认禁用的，而 0.9.0 之后的版本则默认启用。以下是动态分区的相关配置：
+
+`hive.exec.dynamic.partition`
+
+默认值：`true`
+
+说明：需要设置为 true 才能启用动态分区插入
+
+`hive.exec.dynamic.partition.mode`
+
+默认值：`strict`
+
+说明：在严格模式 (strict) 下，用户必须至少指定一个静态分区，以防用户意外覆盖所有分区，在非严格模式下，允许所有分区都是动态的
+
+`hive.exec.max.dynamic.partitions.pernode`
+
+默认值：100
+
+说明：允许在每个 mapper/reducer 节点中创建的最大动态分区数
+
+`hive.exec.max.dynamic.partitions`
+
+默认值：1000
+
+说明：允许总共创建的最大动态分区数
+
+`hive.exec.max.created.files`
+
+默认值：100000
+
+说明：作业中所有 mapper/reducer 创建的 HDFS 文件的最大数量
+
+`hive.error.on.empty.partition`
+
+默认值：`false`
+
+说明：如果动态分区插入生成空结果，是否抛出异常
+
+## 2.3 示例
+
+1. **1.**新建 emp 表，作为查询对象表
+
+```sql
+CREATE TABLE emp(
+    empno INT,
+    ename STRING,
+    job STRING,
+    mgr INT,
+    hiredate TIMESTAMP,
+    sal DECIMAL(7,2),
+    comm DECIMAL(7,2),
+    deptno INT)
+    ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
+
+ -- 加载数据到 emp 表中 这里直接从本地加载
+load data local inpath "/usr/file/emp.txt" into table emp;
+```
+
+完成后 emp 表中数据如下：
+![img](./images/2020-10-19-8pGyg3.jpg)
+
+为清晰演示，先清空 emp_ptn 表中加载的数据：
+
+```sql
+TRUNCATE TABLE emp_ptn;
+```
+
+静态分区演示：从 emp 表中查询部门编号为 20 的员工数据，并插入 emp_ptn 表中，语句如下：
+
+```sql
+INSERT OVERWRITE TABLE emp_ptn PARTITION (deptno=20) 
+SELECT empno,ename,job,mgr,hiredate,sal,comm FROM emp WHERE deptno=20;
+```
+
+完成后 emp_ptn 表中数据如下：
+![img](./images/2020-10-19-jDW94w.jpg)
+
+接着演示动态分区：
+
+```sql
+-- 由于我们只有一个分区，且还是动态分区，所以需要关闭严格默认。因为在严格模式下，用户必须至少指定一个静态分区
+set hive.exec.dynamic.partition.mode=nonstrict;
+
+-- 动态分区   此时查询语句的最后一列为动态分区列，即 deptno
+INSERT OVERWRITE TABLE emp_ptn PARTITION (deptno) 
+SELECT empno,ename,job,mgr,hiredate,sal,comm,deptno FROM emp WHERE deptno=30;
+```
+
+完成后 emp_ptn 表中数据如下：
+![img](./images/2020-10-19-WZm24f.jpg)
+
+### 5.7.3. 使用SQL语句插入值
+
+```sql
+INSERT INTO TABLE tablename [PARTITION (partcol1[=val1], partcol2[=val2] ...)] 
+VALUES ( value [, value ...] )
+```
+
+* 使用时必须为表中的每个列都提供值。不支持只向部分列插入值（可以为缺省值的列提供空值来消除这个弊端）；
+* 如果目标表表支持 ACID 及其事务管理器，则插入后自动提交；
+* 不支持支持复杂类型 (array, map, struct, union) 的插入。
+
+### 5.7.4. 更新和删除数据
+
+#### 5.7.4.1 语法
+
+更新和删除的语法比较简单，和关系型数据库一致。需要注意的是这两个操作都只能在支持 ACID 的表，也就是事务表上才能执行。
+
+```sql
+-- 更新
+UPDATE tablename SET column = value [, column = value ...] [WHERE expression]
+
+--删除
+DELETE FROM tablename [WHERE expression]
+```
+
+#### 5.7.4.2 示例
+
+1. 修改配置
+
+首先需要更改 hive-site.xml，添加如下配置，开启事务支持，配置完成后需要重启 Hive 服务。
+
+```md
+<property>
+    <name>hive.support.concurrency</name>
+    <value>true</value>
+</property>
+<property>
+    <name>hive.enforce.bucketing</name>
+    <value>true</value>
+</property>
+<property>
+    <name>hive.exec.dynamic.partition.mode</name>
+    <value>nonstrict</value>
+</property>
+<property>
+    <name>hive.txn.manager</name>
+    <value>org.apache.hadoop.hive.ql.lockmgr.DbTxnManager</value>
+</property>
+<property>
+    <name>hive.compactor.initiator.on</name>
+    <value>true</value>
+</property>
+<property>
+    <name>hive.in.test</name>
+    <value>true</value>
+</property> 
+```
+
+2. 创建测试表
+
+创建用于测试的事务表，建表时候指定属性 transactional = true 则代表该表是事务表。需要注意的是，按照[官方文档](https://cwiki.apache.org/confluence/display/Hive/Hive+Transactions)的说明，目前 Hive 中的事务表有以下限制：
+
+- 必须是 buckets Table;
+- 仅支持 ORC 文件格式；
+- 不支持 LOAD DATA ...语句。
+
+```sql
+CREATE TABLE emp_ts(  
+  empno int,  
+  ename String
+)
+CLUSTERED BY (empno) INTO 2 BUCKETS STORED AS ORC
+TBLPROPERTIES ("transactional"="true");
+```
+
+3. 插入测试数据
+
+```sql
+INSERT INTO TABLE emp_ts  VALUES (1,"ming"),(2,"hong");
+```
+
+插入数据依靠的是 MapReduce 作业，执行成功后数据如下：
+![img](./images/2020-10-19-0zmFLR.jpg)
+
+4. 测试更新和删除
+
+```sql
+--更新数据
+UPDATE emp_ts SET ename = "lan"  WHERE  empno=1;
+
+--删除数据
+DELETE FROM emp_ts WHERE empno=2;
+```
+
+更新和删除数据依靠的也是 MapReduce 作业，执行成功后数据如下：
+![img](./images/2020-10-19-nhPKez.jpg)
+
+### 5.7.5. 查询结果写出到文件系统
+
+#### 5.7.5.1 语法
+
+```sql
+INSERT OVERWRITE [LOCAL] DIRECTORY directory1
+  [ROW FORMAT row_format] [STORED AS file_format] 
+  SELECT ... FROM ...
+```
+
+* OVERWRITE 关键字表示输出文件存在时，先删除后再重新写入；
+* 和 Load 语句一样，建议无论是本地路径还是 URL 地址都使用完整的；
+* 写入文件系统的数据被序列化为文本，其中列默认由^A 分隔，行由换行符分隔。如果列不是基本类型，则将其序列化为 JSON 格式。其中行分隔符不允许自定义，但列分隔符可以自定义，如下：
+
+```sql
+-- 定义列分隔符为'\t' 
+insert overwrite local directory './test-04' 
+row format delimited 
+FIELDS TERMINATED BY '\t'
+COLLECTION ITEMS TERMINATED BY ','
+MAP KEYS TERMINATED BY ':'
+select * from src;
+```
+
+#### 5.7.5.2 示例
+
+这里我们将上面创建的 `emp_ptn` 表导出到本地文件系统，语句如下：
+
+```sql
+INSERT OVERWRITE LOCAL DIRECTORY '/usr/file/ouput'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+SELECT * FROM emp_ptn;
+```
+
+导出结果如下：
+![img](./images/2020-10-19-5SLPsK.jpg)
