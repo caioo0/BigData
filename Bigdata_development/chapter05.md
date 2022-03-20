@@ -468,7 +468,7 @@ SELECT emp.* FROM emp
 WHERE emp.deptno IN (SELECT deptno FROM dept WHERE loc="NEW YORK");
 ```
 
-## 3.6 JOIN
+#### 5.5.3.6 JOIN
 
 笛卡尔积连接，这个连接日常的开发中可能很少遇到，且性能消耗比较大，基于这个原因，如果在严格模式下 (hive.mapred.mode = strict)，Hive 会阻止用户执行此操作。
 
