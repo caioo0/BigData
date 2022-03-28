@@ -278,6 +278,11 @@ select count(*) from test_transaction;
 - Hive 的事务功能尚属于实验室功能，并不建议用户直接上生产系统，因为目前它还有诸多的限制，如只支持 ORC 文件格式，建表必须分桶等，使用起来没有那么方便，另外该功能的稳定性还有待进一步验证。
 - 如果对于数据一致性不在乎，可以完全关闭 Hive 的 Concurrency 功能关闭，即设置 hive.support.concurrency 为 false，这样 Hive 的并发读写将没有任何限制。
 
-## UDF
+## 6.2 Hive的UDF (未完待续)
 
 （未完待续）
+
+
+## 6.3 学习参考
+
+1. https://www.infoq.cn/article/guide-of-hive-transaction-management
