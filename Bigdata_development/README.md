@@ -26,7 +26,6 @@
 
 ![img.png](./images/chapter01-01.png)
 
-
 ## 参考资料
 
 1. [mermaid官方文档](https://mermaid-js.github.io/mermaid/#/flowchart?id=special-characters-that-break-syntax)

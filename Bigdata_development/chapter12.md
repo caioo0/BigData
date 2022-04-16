@@ -394,6 +394,104 @@ zkCli.sh -server hadoop1:2181
 help
 ```
 
+
+
+命令
+
+作用
+
+ls / ls /zookeeper
+
+查看znode子节点列表
+
+create /zk "myData"
+
+创建znode节点
+
+get /zk
+
+get /zk/node1
+
+获取znode数据
+
+set /zk "myData1"
+
+设置znode数据
+
+ls /zk watch
+
+对一个节点的子节点变化事件注册了监听
+
+get /zk watch
+
+对一个节点的数据内容变化事件注册了监听
+
+create -e /zk "myData"
+
+创建临时znode节点
+
+create -s /zk "myData"
+
+创建顺序znode节点
+
+create -e -s /zk "myData"
+
+创建临时的顺序znode节点
+
+delete /zk
+
+只能删除没有子znode的znode
+
+rmr /zk
+
+不管里头有多少znode，统统删除
+
+stat/zk
+
+查看/zk节点的状态信息
+
+conf
+
+输出相关服务配置的详细信息
+
+cons
+
+列出所有连接到服务器的客户端的完全的连接/会话的详细信息。包括“接受/发送”的包数
+
+量、会话 id、操作延迟、最后的操作执行等等信息
+
+dump
+
+列出未经处理的会话和临时节点
+
+envi
+
+输出关于服务环境的详细信息（区别于 conf 命令）
+
+reqs
+
+列出未经处理的请求
+
+ruok
+
+测试服务是否处于正确状态。如果确实如此，那么服务返回“imok ”，否则不做任何相应
+
+stat
+
+输出关于性能和连接的客户端的列表
+
+wchs
+
+列出服务器 watch 的详细信息
+
+wchc
+
+通过 session 列出服务器 watch 的详细信息，它的输出是一个与watch 相关的会话的列表
+
+wchp
+
+通过路径列出服务器 watch 的详细信息。它输出一个与 session相关的路径
+
 ## 12.6 Java API 使用
 
 ### 前提
