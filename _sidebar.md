@@ -4,7 +4,7 @@
   - [第3节.MapReduce 编程模型基础和实践](Bigdata_development/chapter03.md)
   - [第4节.Hive-数据仓库基础](Bigdata_development/chapter04.md)
   - [第5节.Hive-数据仓库进阶](Bigdata_development/chapter05.md)
-  - [第6节.Hive-数据仓库实战](Bigdata_development/chapter06.md)
+  - [第6节.Hive-数据仓库高级实战](Bigdata_development/chapter06.md)
   - [第7节.项目实战-日志数据分析](Bigdata_development/chapter07.md)
   - [第8节.项目实战-用户消费数据分析](Bigdata_development/chapter08.md)
   - [第9节.Nosql综述和ApacheHBase基础](Bigdata_development/chapter09.md)
