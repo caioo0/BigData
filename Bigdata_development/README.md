@@ -24,7 +24,7 @@
 
 部分截图：
 
-![img.png](chapter01-01.png)
+![img.png](./images/chapter01-01.png)
 
 
 ## 参考资料

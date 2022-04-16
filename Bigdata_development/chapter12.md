@@ -8,11 +8,11 @@ Zookeeper是一个开源的分布式的，为分布式应用提供协调服务�
 
 Zookeeper从设计模式角度来理解：是一个基于观察者模式设计的分布式服务管理框架，它**负责存储和管理大家都关心的数据**，然后**接受观察者的注册**，一旦这些数据的状态发生变化，Zookeeper就将**负责通知已经在Zookeeper上注册的那些观察者**做出相应的反应，从而实现集群中类似Master/Slave管理模式
 
-![img.png](chapter12-01.png)
+![img.png](./images/chapter12-01.png)
 
 ### 12.1.2 Zookeeper 特点
 
-![img.png](chapter12-02.png)
+![img.png](./images/chapter12-02.png)
 
 1) Zookper: 一个领导者（Leader）,多个跟随者 （Follower）组成的集群。
 2) 集群只要有半数以上节点存活，Zookeeper集群就能正常服务。👀️
@@ -36,7 +36,7 @@ Zookeeper 数据模型的结构与**Unix文件系统很类似**，整体上可�
 
 `ZNode`只适合存储非常小量的数据，不能超过**1MB**,最好小于**1KB**
 
-![img.png](chapter12-03.png)
+![img.png](./images/chapter12-03.png)
 
 #### ZNode的分类
 
@@ -126,7 +126,7 @@ Watcher是基于**观察者模式**实现的一种机制。如果我们需要实
   户端的 WatcherManager 当中。当 ZooKeeper 服务器触Watcher 事件后，会向客户端发送通知，客户
   端线程从 WatcherManager 中取出对应的 Watcher 对象来执行回调逻辑。
 
-![img.png](chapter12-04.png)
+![img.png](./images/chapter12-04.png)
 
 - 在main线程中创建Zookeeper客户端，这时就会创建两个线程，一个负责网络连接通信(connect)，
   一个负责监听(listener)，通过connect线程将注册的监听事件添加到列表中。Zookeeper监听有数据
@@ -140,7 +140,7 @@ Zookeeper 是一个高可用的应用框架，因为Zookeeper是支持集群的�
 
 如果运行时，**如果长时间无法与Leader保持连接的话，则会再次进行选举，产生新的Leader，以保证服务的可用**。
 
-![img.png](chapter12-05.png)
+![img.png](./images/chapter12-05.png)
 
 ## 12.4 应用场景
 
@@ -165,7 +165,7 @@ Zookeeper 是一个高可用的应用框架，因为Zookeeper是支持集群的�
     - 监听这个ZNode可获取它的实时状态变化。
 - **服务器动态上下线：** 客户端能实时洞察到服务器上下线的变化
 - **软负载均衡：** 在ZooKeeper中记录每台服务器的访问数，让访问数最少的服务器去处理最新的客户端请求
-  ![img.png](chapter12-06.png)
+  ![img.png](./images/chapter12-06.png)
 
 ## 12.5 Zookeeper 安装
 
@@ -693,7 +693,7 @@ public enum KeeperState {
     zooKeeper.setData("/java", "spring".getBytes(), -1);
 ```
 
-![img.png](chapter12-08.png)
+![img.png](./images/chapter12-08.png)
 
 - 串行执行:客户端Watcher回调的过程是一个串行同步的过程，这是为了保证顺序。
 
@@ -716,7 +716,7 @@ zooKeeper.exists("/java", new Watcher() {
 ```
 
 打印结果，说明先调用exists()方法的监听器，再调用getData()方法的监听器。因为exists()方法先注册了。
-![img.png](chapter12-09.png)
+![img.png](./images/chapter12-09.png)
 
 - 轻量级。WatchedEvent是ZK整个Watcher通知机制的最小通知单元。WatchedEvent包含三部分：通知状态，事件类型，节点路径。Watcher通知仅仅告诉客户端发生了什么事情，而不会说明事件的具体内容。
 
