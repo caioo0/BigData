@@ -16,17 +16,7 @@
 - [第12节.ZookKeeper的核心设计和企业级应用](Bigdata_development/chapter12.md) （2022.4.16）
 - [第13节.企业级离线数据仓库项目实战开发](Bigdata_development/chapter13.md) （2022.4.20）
 
-### 课程内容简介
-
-介绍地址：
-
-[https://deepshare.feishu.cn/docs/doccnD7CSY787vusiBV8D1zsvAh](https://deepshare.feishu.cn/docs/doccnD7CSY787vusiBV8D1zsvAh)
-
-部分截图：
-
-![img.png](./images/chapter01-01.png)
-
-```
+###  先修知识
 > **大数据的基础必备**
 >
 > - JavaSE编程
@@ -35,10 +25,15 @@
 > - 基于XML的解析
 > - 基于maven构建project
 > - 书籍推荐：《Hadoop权威指南》《HBase权威指南》
-```
+### 课程内容简介
+
+介绍地址：
+[https://deepshare.feishu.cn/docs/doccnD7CSY787vusiBV8D1zsvAh](https://deepshare.feishu.cn/docs/doccnD7CSY787vusiBV8D1zsvAh)
+
+部分截图：
+![img.png](./images/chapter01-01.png)
 
 ## 参考资料
-
 1. [mermaid官方文档](https://mermaid-js.github.io/mermaid/#/flowchart?id=special-characters-that-break-syntax)
 2. [文档中心-Ambari使用指南 - 金山云](https://docs.ksyun.com/documents/5519)
 3. [Ambari 架构](https://ifeve.com/ambari-1/)
