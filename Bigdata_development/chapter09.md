@@ -650,3 +650,123 @@ truncate 'customer'
 ```
 drop 'customer'
 ```
+
+## 9.5 HBase 进阶
+
+### 9.5.1  架构原理
+
+![image.png](./assets/1650164466796-image.png)
+
+1） StoreFile
+
+保存实际数据的物理文件，StoreFile以HFile的形式存储在HDFS上。每个Store会有一个或多个StoreFile(HFile)，数据在每个StoreFile中都是有序的。
+
+2）MemStore
+
+写缓存，由于HFile中的数据要求是有序的，所以数据是有先存储在MemStore中，排好序后，等到达刷写时机才会刷写到HFile,每次刷写都会形成一个新的HFile。
+
+3）WAL
+
+由于数据要经MemStore排序后才能刷写到HFile，但把数据保存在内存中会有很高的概率导致数据丢失，为了解决这个问题，数据会写在一个叫做Write-Ahead logfile的文件中，然后再写MemStore中。所以在系统出现故障的时候，数据可以通过这个日志文件重建。
+
+### 9.5.2 写流程
+
+![image.png](./assets/1650164871905-image.png)
+
+**写流程**
+
+1）client 先访问zookeepr,获取hbase:meta表位于哪个Region Server。
+
+2）访问对应的Region Server,获取hbase:meta表，根据读物请求的namespace:table/rowkey,查询出目标数据位于哪个Region Server 中的哪个Region中。并将该table的region信息以及meta表的位置信息缓存在客户端的meta cache,方便下次访问。
+
+3）与目标Region Server进行通讯；
+
+4）将数据顺序写入（追加）到WAL；
+
+5）将数据写入对应的MemStore，数据会在MemStore进行排序；
+
+6）向客户端发送ack；
+
+7）等达到MemStore的刷写时机后，将数据刷写到HFile。
+
+### 9.5.3 MemStore Flush
+
+![image.png](./assets/1650165192155-image.png)
+
+**MemStore刷写时机：**
+
+1.当某个memstroe的大小达到了 **hbase.hregion.memstore.flush.size（默认值128M）** ，其所在region的所有memstore都会刷写。
+
+当memstore的大小达到了
+
+**hbase.hregion.memstore.flush.size（默认值128M）**
+
+***hbase.hregion.memstore.block.multiplier** **（默认值4）**
+
+时，会阻止继续往该memstore写数据。
+
+2.当region server中memstore的总大小达到
+
+**java_heapsize**
+
+***hbase.regionserver.global.memstore.size**  **（默认值0.4** **）**
+
+**hbase.regionserver.global.memstore.size.lower.limit**  **（默认值0.95）** ，
+
+region会按照其所有memstore的大小顺序（由大到小）依次进行刷写。直到region server中所有memstore的总大小减小到上述值以下。
+
+当region server中memstore的总大小达到
+
+**java_heapsize**
+
+***hbase.regionserver.global.memstore.size**  **（默认值0.4** **）**
+
+时，会阻止继续往所有的memstore写数据。
+
+3. 到达自动刷写的时间，也会触发memstore flush。自动刷新的时间间隔由该属性进行配置 **hbase.regionserver.optionalcacheflushinterval**  **（默认1小时）** 。
+4. 当WAL文件的数量超过 **hbase.regionserver.max.logs** ，region会按照时间顺序依次进行刷写，直到WAL文件数量减小到**hbase.regionserver.max.log**以下（该属性名已经废弃，现无需手动设置，最大值为32）。
+
+### 9.5.4 读流程
+
+![image.png](./assets/1650165669846-image.png)
+
+**读流程**
+
+1）Client先访问zookeeper，获取hbase:meta表位于哪个Region Server。
+
+2）访问对应的Region Server，获取hbase:meta表，根据读请求的namespace:table/rowkey，查询出目标数据位于哪个Region Server中的哪个Region中。并将该table的region信息以及meta表的位置信息缓存在客户端的meta cache，方便下次访问。
+
+3）与目标Region Server进行通讯；
+
+4）分别在Block Cache（读缓存），MemStore和Store File（HFile）中查询目标数据，并将查到的所有数据进行合并。此处所有数据是指同一条数据的不同版本（time stamp）或者不同的类型（Put/Delete）。
+
+5） 将从文件中查询到的数据块（Block，HFile数据存储单元，默认大小为64KB）缓存到Block Cache。
+
+6）将合并后的最终结果返回给客户端。
+
+### 9.5.5 StoreFile Compaction
+
+由于memstore每次刷写都会生成一个新的HFile，且同一个字段的不同版本（timestamp）和不同类型（Put/Delete）有可能会分布在不同的HFile中，因此查询时需要遍历所有的HFile。
+
+为了减少HFile的个数，以及清理掉过期和删除的数据，会进行StoreFile Compaction。
+
+Compaction分为两种，分别是Minor Compaction和Major Compaction。Minor Compaction会将临近的若干个较小的HFile合并成一个较大的HFile，但**不会**清理过期和删除的数据。Major Compaction会将一个Store下的所有的HFile合并成一个大HFile，并且**会**清理掉过期和删除的数据。
+
+![image.png](./assets/1650165749931-image.png)
+
+### 9.5.6 Region Split
+
+默认情况下，每个Table起初只有一个Region，随着数据的不断写入，Region会自动进行拆分。刚拆分时，两个子Region都位于当前的Region Server，但处于负载均衡的考虑，HMaster有可能会将某个Region转移给其他的Region Server。
+
+Region Split时机：
+
+1.当1个region中的某个Store下所有StoreFile的总大小超过hbase.hregion.max.filesize，该Region就会进行拆分（0.94版本之前）。
+
+2.当1个region中的某个Store下所有StoreFile的总大小超过Min(R^2 * "hbase.hregion.memstore.flush.size",hbase.hregion.max.filesize")，该Region就会进行拆分，其中R为当前Region Server中属于该Table的个数（0.94版本之后）。
+
+![image.png](./assets/1650165798698-image.png)
+
+## 9.7 参考资料
+
+1. 尚硅谷大数据之HBase
+2. https://www.runoob.com/mongodb/nosql.html
