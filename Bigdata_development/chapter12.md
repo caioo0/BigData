@@ -4,7 +4,7 @@
 
 Zookeeper是一个开源的分布式的，为分布式应用提供协调服务的Apache项目
 
-### 12.1.1 Zookeepr工作机制
+### 12.1.1 Zookeeper工作机制
 
 Zookeeper从设计模式角度来理解：是一个基于观察者模式设计的分布式服务管理框架，它**负责存储和管理大家都关心的数据**，然后**接受观察者的注册**，一旦这些数据的状态发生变化，Zookeeper就将**负责通知已经在Zookeeper上注册的那些观察者**做出相应的反应，从而实现集群中类似Master/Slave管理模式
 
@@ -153,7 +153,7 @@ Zookeeper 是一个高可用的应用框架，因为Zookeeper是支持集群的�
     - 一般要求一个集群中，所有节点的配置信息是一致的，比如Kafka集群。
     - 对配置文件修改后，希望能够快速同步到各个节点上。
   - 配置管理可交由Zookeeper实现
-    - 可将配置信息写入Zookeepr上的一个ZNode.
+    - 可将配置信息写入Zookeeper上的一个ZNode.
     - 各个客户端服务器监听这个ZNode.
     - 一旦ZNode中的数据被修改，ZooKeeper将通知各个客户端服务器。
 - **统一集群管理：**
@@ -393,8 +393,6 @@ zkCli.sh -server hadoop1:2181
 #查看帮助
 help
 ```
-
-
 
 命令
 
@@ -823,3 +821,4 @@ zooKeeper.exists("/java", new Watcher() {
 1. https://mp.weixin.qq.com/s/BPiycGUGq61ZD63lm2ojoQ
 2. https://mp.weixin.qq.com/s/fS-GlvOJNFRr4UGRlQC2mQ
 3. https://zhuanlan.zhihu.com/p/59669985
+4. https://www.runoob.com/w3cnote/zookeeper-tutorial.html
