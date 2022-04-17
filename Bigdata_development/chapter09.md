@@ -331,29 +331,35 @@ cp hdfs-site.xml /root/install/hbase-1.2.12/conf/
 
 #### 9.3.2.1 解压安装包：
 
+1. 解压安装包：
+
 ```
-\1. 解压安装包： 
-
 tar -zxvf hbase-1.2.12-bin.tar.gz -C ../install/ 
+```
 
-\2. 修改配置文件：hbase-env.sh 
+2. 修改配置文件：hbase-env.sh
 
+```
 cd /root/install/hbase-1.2.12/conf/
 
 vi hbase-env.sh 
+```
 
-修改两个两地方： 
+修改两个两地方：
 
+```
 export JAVA_HOME=/root/install/jdk1.8.0_65 #表示修改为自己的jdk目录 
 
 export HBASE_MANAGES_ZK=false #默认为true，改为false，表示不用自带的 
+```
 
-zookeeper 
+zookeeper
 
-修改集群配置文件：hbase-site.xml 
+3. 修改集群配置文件：hbase-site.xml
 
-增加以下配置： 
+增加以下配置：
 
+```
 <configuration> 
 
 <property>
@@ -387,9 +393,11 @@ zookeeper
 </property> 
 
 </configuration> 
+```
 
-修改regionservers 
+5. 修改regionservers
 
+```
 执行命令：vi regionservers 
 
 hadoop1 
@@ -397,75 +405,95 @@ hadoop1
 hadoop2 
 
 hadoop3
+```
 
-3. 在conf下创建backup-masters 
+6. 在conf下创建backup-masters
 
+```
 touch backup-masters 
+```
 
-然后往文件中增加如下内容，配置你的backup master节点 
+然后往文件中增加如下内容，配置你的backup master节点
 
+```
 hadoop3 
+```
 
-\4. 拷贝hadoop的核心配置文件过来 
+7. 拷贝hadoop的核心配置文件过来
 
-最重要一步，要把hadoop的hdfs-site.xml和core-site.xml放到hbase-1.2.6/conf下，如果不是HA的 
+最重要一步，要把hadoop的hdfs-site.xml和core-site.xml放到hbase-1.2.6/conf下，如果不是HA的
 
-Hadoop集群，那可以不拷贝 
+Hadoop集群，那可以不拷贝
 
+```
 cp core-site.xml hdfs-site.xml ~/install/hbase-1.2.12/conf/
+```
 
-\5. 分发安装包到各节点，注意安装路径要一样！ 
+8. 分发安装包到各节点，注意安装路径要一样！
 
+```
 scp -r hbase-1.2.12 root@hadoop2:/root/install 
 
 scp -r hbase-1.2.12 root@hadoop2:/root/install 
+```
 
-\6. 同步服务器时间 
+9. 同步服务器时间
 
-HBase集群对于时间的同步要求的比HDFS严格，所以，集群启动之前千万记住要进行时间同步，要求相差不要 
+HBase集群对于时间的同步要求的比HDFS严格，所以，集群启动之前千万记住要进行时间同步，要求相差不要
 
-超过30s，这个操作，我们最开始在准备集群的时候，就应该已经做了 
+超过30s，这个操作，我们最开始在准备集群的时候，就应该已经做了
 
-在三台节点都执行如下命令： 
+在三台节点都执行如下命令：
 
+```
 yum install -y ntpdate 
 
 ntpdate -u ntp.api.bz 
+```
 
-\7. 配置环境变量 
+10. 配置环境变量
 
+```
 export HBASE_HOME=/home/bigdata/apps/hbase-1.2.12 
 
 export PATH=$PATH:$HBASE_HOME/bin 
+```
 
-\8. 启动（顺序别搞错了） 
+11. 启动（顺序别搞错了）
 
-保证ZooKeeper集群和HDFS集群启动正常的情况下启动HBase集群 
+保证ZooKeeper集群和HDFS集群启动正常的情况下启动HBase集群
 
-1、先启动zookeeper集群 
+1、先启动zookeeper集群
 
+```
 zkServer.sh start 
+```
 
-2、启动hdfs集群 
+2、启动hdfs集群
 
+```
 start-dfs.sh 
+```
 
-3、启动hbase 
+3、启动hbase
 
+```
 start-hbase.sh 
+```
 
-查看启动是否正常，是否成功 
+查看启动是否正常，是否成功
 
-检查各进程是否启动正常 
+检查各进程是否启动正常
 
-主节点和备用节点都启动hmaster进程 
+主节点和备用节点都启动hmaster进程
 
-各从节点都启动hregionserver进程 
+各从节点都启动hregionserver进程
 
-\9. 通过访问浏览器页面：http://192.168.134.133:16010 
+12 通过访问浏览器页面：http://192.168.72.133:16010
 
-\10. 如果有节点相应的守护进程没有启动，那么可以手动启动 
+13. 如果有节点相应的守护进程没有启动，那么可以手动启动
 
+```
 hbase-daemon.sh start master 
 
 hbase-daemon.sh start regionserver
