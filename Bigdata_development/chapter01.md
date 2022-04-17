@@ -1,39 +1,43 @@
 # 第1节.大数据概况及Hadoop生态系统 :id=1
 
-> **大数据的基础必备**
->
-> - JavaSE编程
-> - 数据库Mysql数据库的应用，掌握基于SQL常用操作
-> - 掌握Linux常用命令
-> - 基于XML的解析
-> - 基于maven构建project
-> - 书籍推荐：《Hadoop权威指南》《HBase权威指南》
-
-## 1.1 本节知识点 :id=1-1
+**本节知识点**
 
 - 了解大数据概论及属性
 - 了解大数据分布式处理的基本方法
 - 了解Hadoop生态系统
 - 理解Hadoop框架及核心模块
-- 掌握HDFS基本文件操作命令
-- 掌握用Java实现HDFS文件读写
 
-## 1.2 大数据概论及属性 :id=1-2
+## 1.1 大数据 :id=1-2
 
-### 大数据定义
+### 1.1.1 大数据定义
 
-**大数据(Big Data)** 指无法在可承受的时间范围内用常规软件工具进行捕捉、管理和处理的数据集合，
-是需要新处理模式才能具有更强的决策力、洞察发现力和流程优化能力的海量、高增长率和多样化的信息资产。
-![img.png](./images/chapter01-02.png)
+**大数据(Big Data)** 指**无法在可承受的时间范围**内用常规软件工具进行捕捉、管理和处理的数据集合，
+是需要新处理模式才能具有更强的决策力、洞察发现力和流程优化能力的**海量、高增长率和多样化的信息资产**。
 
-### 大数据四大特征
+主要解决，海量数据的**存储**和海量数据的**分析计算**问题。
 
-- 数据量大（Volume） - 过去两年产生了90%的数据量，未来有50%的数据将通过Hadoop这个平台产生
-- 处理速度快（Velocity） - 为了实现快速分析海量数据的目的，新兴的大数据分析技术通常采用集群处理和独特的内部设计。
-- 数据类型繁多（Variety） - 大数据的数据来源众多，生物大数据、交通大数据、医疗大数据、电信大数据、电力大数据、金融大数据等（种类越丰富，价值越高）
-- 价值密度低（Value）- 价值密度却远远低于传统关系数据库中已经有的数据。(并非数据越大越有价值)
+```mermaid
+graph LR
+    A[托夫勒第三次浪潮] --> B[麦肯锡大数据应用];
+    B --> C[舍恩伯格大数据时代];
+    C --> D[谷歌云计算助力];
+    D --> E[阿里云国内规模化];
+```
 
-### 数据分析
+按顺序给出数据存储单位：bit、btye、KB、MB、GB、**TB、PB、EB**、ZB、YB、BB、NB、DB。
+
+1Byte =8bit 1K=1024Byte 1MB = 1024K
+
+1G = 1024M **1T=1024G** **1P = 1024T**
+
+### 1.1.2大数据特征(4V)
+
+- 大量（Volume） - 过去两年产生了90%的数据量，未来有50%的数据将通过Hadoop这个平台产生
+- 高速（Velocity） - 为了实现快速分析海量数据的目的，新兴的大数据分析技术通常采用集群处理和独特的内部设计。
+- 多样（Variety） - 大数据的数据来源众多，生物大数据、交通大数据、医疗大数据、电信大数据、电力大数据、金融大数据等（种类越丰富，价值越高）
+- 低价值密度（Value）- 价值密度却远远低于传统关系数据库中已经有的数据。(并非数据越大越有价值)
+
+### 1.1.3数据分析
 
 **数据分析**是基于**商业目的**，有目的的进行收集、整理、加工和分析数据，**提炼有价值信息**的过程。
 
@@ -44,20 +48,18 @@ graph LR
     C --> D[分析报告提炼价值];
 ```
 
-### 数据的特点
+### 1.1.4 数据的特点
 
 - 基于时间 - 数据产生的时间是一个重要的元素
 - 不可变更性 - 数据的真实性不会改变。 我们将大数据的变化视为新条目，而不是现有条目的更新
 
-### 传统分布式和基于Hadoop的分布式
+### 1.1.5 传统分布式和基于Hadoop的分布式？
 
 **思考题：** 并行和并发的区别？
 
 > 并行(Parallel)：大数据领域，**当系统有一个以上CPU时，当一个CPU执行一个进程时，另一个CPU可以执行另一个进程，两个进程互不抢占CPU资源，可以同时进行，这种方式我们称之为并行(Parallel)。**
 >
 > 并发(**Concurrent**)：web领域，指的是多个事情，在同一时间段内同时发生了.并发的多个任务之间是互相抢占资源的
-
-
 
 传统的分布式计算的特点:**数据向计算靠拢**
 
@@ -70,18 +72,11 @@ graph LR
 基于Hadoop的新型分布式计算:**计算向数据靠拢**
 
 - 分布式存储数据，**数据不用复制到计算节点**
-
   - 将程序分发到数据节点，处理大数据成为可能
   - 廉价的机器群就可以实现
   - 算法支持并行运算
 
-## 1.3 Hadoop简介  :id=1-3
-
-Hadoop 是一个可靠的，可伸缩的，开源的分布式计算软件。
-
-Apache Hadoop软件库是一个框架，该框架允许使用简单的编程模型跨计算机集群对大型数据集进行分布式处理。它被设计成从单个服务器扩展到数千台机器，每台机器都提供本地计算和存储。本身的设计目的是在应用层检测和处理故障，而不是依赖硬件来提供高可用性，因此在计算机集群之上提供高可用性服务，而每个节点都容易发生故障
-
-### Hadoop vs RDMS
+### 1.1.6 Hadoop vs RDMS
 
 
 |                          | Relational                                                                     | Hadoop                                                                                                               |
@@ -96,7 +91,7 @@ Apache Hadoop软件库是一个框架，该框架允许使用简单的编程模�
 > * (Hadoop并不是要取代关系数据库。 Hadoop用于存储大数据，这通常是由于大小或成本限制而无法存储
 >   在RDB中的数据类型)
 
-### OLAP和OLTP的区别
+### 1.1.7 OLAP和OLTP的区别
 
 ```md
 联机分析处理(OLAP)的概念最早是由关系数据库之父E.F.Codd于1993年提出的，他同时提出了关于OLAP的12条准则。OLAP的提出引起了很大的反响，OLAP作为一类产品同联机事务处理（OLTP）明显区分开来。
@@ -127,156 +122,391 @@ OLAP是数据仓库系统的主要应用，支持复杂的分析操作，侧重�
 | 分区技术           | 使用，但目标不同                     | 使用，但目标不同                         |
 | 物化视图           | 少量使用                             | 大量使用                                 |
 
-## 1.4 Hadoop架构  :id=1-4
+## 1.2 Hadoop 概述  :id=1-2
 
-Hadoop是Apache软件基金会旗下的一个开源分布式计算平台，为用户提供了系统底层细节透明的分布式基础架构。Hadoop是基于Java语言开发的，具有很好的跨平台特性，并且可以部署在廉价的计算机集群中。
+### 1.2.1 Hadoop 简介
 
-Hadoop的核心是分布式文件系统HDFS（Hadoop Distributed File System）和MapReduce。
+1）Hadoop 是一个由Apache基金会开发的分布式基础框架。
 
-- HDFS是对谷歌文件系统(Google File System，GFS）的开源实现，是面向普通硬件环境的分布式文件系统，具有较高的读写速度、很好的容错性和可伸缩性，支持大规模数据的分布式存储，其冗余数据存储的方式，很好地保证了数据的安全性。
-- MapReduce是针对谷歌MapReduce的开源实现，允许用户在不了解分布式系统底层细节的情况下开发并行应用程序，采用MapReduce来整合分布式文件系统上的数据，可保证分析和处理数据的高效性。借助于Hadoop，程序员可以轻松地编写分布式并行程序，可将其运行于廉价计算机集群上，完成海量数据的存储与计算。
+2）主要解决，海量数据的**存储**和海量数据的**分析计算**问题。
 
-Hadoop是一个能够对大量数据进行分布式处理的软件框架，并且是以一种可靠、高效、可伸缩的方式进行数据处理，它具有以下几个方面的特性：
+3）广义上来说，Hadoop通常是指一个更广泛的概念 -- Hadoop生态圈
 
-- **高可靠性：** 采用冗余数据存储方式，即使一个副本发生故障，其他副本也可以保证正常对外提供服务。Hadoop按位存储和处理数据的能力，值得人们信赖。
-- **高效性：** 作为并行分布式计算平台，Hadoop采用分布式存储和分布式处理两大核心技术，能够高效地处理PB级数据。Hadoop能够在节点之间动态地移动数据，并保证各个节点的动态平衡，因此处理速度非常快。
-- **高可扩展性：** Hadoop的设计目标是可以高效稳定地运行在廉价的计算机集群上，可以扩展到数以千计的计算机节点。
-- **高容错性：** 采用冗余数据存储方式，自动保存数据的多个副本，并且能够自动将失败的任务进行重新分配。
-- **成本低：** Hadoop采用廉价的计算机集群，成本较低，普通用户也很容易用自己的PC上搭建Hadoop运行环境，与一体机、商用数据仓库以及QlinkView、Yonghong Z-Suit等数据集相比，Hadoop是开源的，项目的软件成本因此会大大降低。
-- **运行在Linux平台上：** Hadoop是基于Java语言开发的，可以较好地运行在Linux平台上。
-- **支持多种编程语言：** Hadoop上的应用程序也可以使用其他语言编写，如C++.
+![image.png](./assets/1650187767741-image.png)
 
-Hadoop 模块：
+### 1.2.2 Hadoop发展历史
 
-- **Common:** 支持其他模块的公用工具包,它主要包括**FileSystem、RPC和串行化库**。
-- **HDFS:**  一个可高吞吐访问应用数据的分布式分拣系统,HDFS具有处理超大数据、流式处理、可以运行在廉价商用服务器上等优点。。
-- **YARN:** 一个管理集群服务器资源和任务调度的框架。
-- **MapReduce:** 基于Yarn对大数据集进行并行计算的系统。
-- **HBase:** 一个提供高可靠性、高性能、可伸缩、实时读写和分布式的列式数据库.HBase是一个适合于非结构化数据存储的数据库,HBase是基于列而不是基于行的存储模式，HBase主要用于需要随机访问、实时读写的大数据（Big Data）。
-- **pig:** Pig是一种数据流语言和运行环境，适合于使用Hadoop和MapReduce的平台来查询大型半结构化数据集，
-- **Sqoop:** 主要用来在Hadoop和关系数据库之间交换数据,Sqoop可以改进数据的互操作性。通过JDBC（Java DataBase Connectivity）与关系数据库进行交互理论上，支持JDBC的关系数据库都可以用Sqoop与Hadoop进行数据交互。
-- **Chukwa：** Chukwa是开源的数据收集系统，用于监控和分析大型分布式系统的数据。
-- **Zookeeper：** Zookeeper是一个为分布式应用所涉及的开源协调服务，主要为用户提供同步、配置管理、分组和命名等服务，减轻分布式应用程序所承担的协调任务，Zookeeper的文件系统使用了我们所熟悉的目录树结构，Zookeeper是主要使用Java语言编写，同时支持C语言。
+1. Lucene框架是Doug Cutting(道格.卡丁)开创的开源软件，用Java书写代码，实现与Google类似的全文搜索功能，它提供了全文检索引擎的架构，包括完整的查询引擎和索引引擎。
 
-![img_1.png](img_1.png)
+   ![image.png](./assets/1650189317769-image.png)
+2. 2001年年底Lucene成为Apache基金会的一个子项目。
+3. 对于海量数据的场景，Lucene面对与Google同样的困难，**存储数据困难，检索速度慢。**
+4. 学习和模仿Google解决这些问题的办法：微型版Nutch。
+5. 可以说Google是Hadoop的思想之源（Google在大数据方面的三篇论文）
 
-纠错码技术（Erasure coding）简称EC,是一种编码容错技术。最早用于通信行业，数据传输中的数据恢复。
-它通过对数据进行分块，然后计算出校验数据，使得各个部分的数据产生关联性。
-当一部分数据块丢失时，可以通过剩余的数据块和校验计算出丢失的数据块。
-
-## 1.5 haddop之HDFS :id=1-5
-
-### 设计思路
-
-HDFS 以流式数据访问模式来存储超大文件，运行于商用硬件集群上。
-
-HDFS 的构建思路是这样的：一次写入、多次读取是最高效的访问模式。
-
-- 设计思想
-  分而治之，将大文件，大批量文件，分布式的存放于大量服务器上。以便于采取分而治之的方法对海量数据及逆行运算分析
-- 在大数据系统架构中的应用：为各类分布式运算框架（MapReduce,Spark,Tez,Flink）提供数据存储服务。
-- 重点概念：数据块/副本，负载均衡，心跳机制，副本存放策略，元数据/元数据管理，安全模式，机架感知
-
-HDFS被设计成用来使用低廉的服务器来进行海量数据的存储，那是怎么做到的呢？
-
-- 大文件被切割成小文件，使用分而治之的思想让很多服务器对同一个文件进行联合管理
-- 每个小文件做冗余备份，并且分散存到不同的服务器，做到高可靠不丢失
-
-![img.png](images/chapter03-05.png)
-
-**HDFS 数据存储单元（block）**
-
-- 文件被切分成固定大小的数据块
-  - 基本读写单位，类似于磁盘的页，每次读写一个块
-  - 默认数据块大小为128MB(hadoop2.x),可配置
-  - 若文件大小不到128MB,则单独存成一个block
-  - 配置大数据块主要是因为：
-    1）  减少寻址开销，一般硬盘传输速率比寻址时间要快，大数据块可以最小化寻址开销；
-    2）  简化存储管理，每个块都需要在NameNode上有对应的记录；
-    3）  对数据块进行读写，减少建立网络的连接成本；
-- 一个文件存储方式
-  - 按大小被切分成若干个block，存储道不同节点上。
-  - 默认情况下每个block都有三个副本
-- Block大小和副本数通过client端上传文件时设置，文件上传成功后副本数可以变更，Block  size 不可变更。
-
-HDFS中的`fsck`指令可以显示块信息。
-
-```md
-% hdfs fsck / -files -blocks 
+```mermaid
+graph LR
+    A[GFS] --> B[HDFS];
+    C[Map-Reduce] --> D[MR];
+    E[BigTable] --> F[HBase];
 ```
 
-## 1.6 HDFS架构  :id=1-6
+6. 2003-2004年，Google公开了部分GFS和MapReduce思想的细节，以此为基础Doug Cutting等人用了**2年业余时间**实现了HDFS和MapReduce机制，使Nutch性能飙升。
+7. 2005年Hadoop作为Lucene的子项目Nutch的一部分正式引入Apache基金会。
+8. 2006 年 3月份，Map-Reduce和Nutch Distributed File System(NDFS)分别被纳入到Hadoop项目中，Hadoop就此正式诞生，标志着大数据时代来临。
+9. 名字来源于Doug Cutting儿子的玩具大象，如图：
 
-![img.png](images/chapter03-01.png)
+   ![image.png](./assets/1650190037907-image.png)
 
-HDFS遵循主/从架构，由单个名称节点NameNode(NN)和多个数据节点DataNode(DN)组成：
+### 1.2.3 Hadoop 三大发行版本
 
-- **NameNode**:负责执行有关`文件系统命名空间`的操作，它维护着文件系统树及整颗树内所有的文件和目录。 这些信息以两个文件形式永久保存在本地磁盘上:`命名空间镜像文件`和`编辑日志文件`。例如打开，关闭，重命名文件和目录等。它同时还负责集群元数据的存储，记录着文件中各个数据块的位置信息。
-- **SecondaryNamenode**： 辅助namenode,严格说并不是 NameNode 备份节点，主要给 namenode 分担压力之用
-- **DataNode**:负责提供来自文件系统客户端的读写请求，在NameNode的统一调度下进行数据块的创建，删除和复制等操作。
-- 每个数据节点会周期性地向名称节点发送"**心跳**"信息，报告自己的状态，没有按时发送心跳信息的数据节点会被标记为"宕机"，不会再给它分配任何I/O请求。 由于数据不再可用，可能会导致某些块的复制因子小于其指定值，NameNode 会跟踪这些块，并在必要的时候进行重新复制。
+Hadoop三大发行版本：**Apache、Cloudera、Hortonworks**。
 
-用户在使用HDFS时，仍然可以像在普通文件系统中那样，使用文件名去存储和访问文件。
+- Apache版本最原始（最基础）的版本，对于入门学习最好。
+- Cloudera在大型互联网企业中用的较多。
+- Hortonworks文档较好。
 
-实际上，在系统内部，一个文件会被切分成若干个数据块，这些数据块被分布存储到若干个数据节点.当客户端需要访问一个文件时，首先把文件名发送给名称节点，名称节点根据文件名找到对应的数据块（所有相关），再根据每个数据块信息找到实际存储的数据节点位置并发送给客户端，客户端直接访问这些数据节点并获取数据。
+1. Apache Hadoop
 
-> 注意：在整个访问过程中，名称节点并不参与数据的传输。
+官网地址：http://hadoop.apache.org/releases.html
+下载地址：[https://archive.apache.org/dist/hadoop/common/](https://archive.apache.org/dist/hadoop/common/)
 
-这种设计方式，是的各个文件的数据能够在不同的数据节点上实现并发访问，大大提高数据访问速度。
+2. Cloudera Hadoop
 
-**namenode 和 datanode**
+官网地址：https://www.cloudera.com/downloads/cdh/5-10-0.html
 
-HDFS 集群有两类节点以管理节点·工作节点模式运行，即一个 namenode （管理节点）和多个 datanode （工作节点）。
+下载地址：http://archive-primary.cloudera.com/cdh5/cdh/5/
 
-- namenode 管理文件系统的命名空间。它维护着文件系统树及整棵树内所有的文件和目录。
+（1）2008年成立的Cloudera是最早将Hadoop商用的公司，为合作伙伴提供Hadoop的商用解决方案，主要是包括支持、咨询服务、培训。
 
-这些信息以两个文件形式永久保存在本地磁盘上：命名空间镜像文件和编辑日志文件。
+**（2）2009年Hadoop的创始人Doug Cutting也加盟Cloudera公司** 。Cloudera产品主要为CDH，Cloudera Manager，Cloudera Support
 
-- namenode 也记录着每个文件中各个块所在的数据节点信息，但它并不永久保存块的位置信息，因为这些信息会在系统启动时根据数据节点信息重建。
+（3）CDH是Cloudera的Hadoop发行版，完全开源，比Apache Hadoop在兼容性，安全性，稳定性上有所增强。
 
-客户端（client）代表用户通过与 namenode data node 交互来访问整个文件系统。
+（4）Cloudera Manager是集群的软件分发及管理监控平台，可以在几个小时内部署好一个Hadoop集群，并对集群的节点及服务进行实时监控。Cloudera Support即是对Hadoop的技术支持。
 
-**datanode** 是文件系统的工作节点。它们根据需要存储井检索数据块（受客户端namenode 调度），并且定期向 namenode 发送它们所存储的块的列表。
+（5）Cloudera的标价为每年每个节点4000美元。Cloudera开发并贡献了可实时处理大数据的Impala项目。
 
-> 思考：为什么 Namenode和DataNode为什么不放在同一个节点？
+3. Hortonworks Hadoop
+
+官网地址：https://hortonworks.com/products/data-center/hdp/
+
+下载地址：https://hortonworks.com/downloads/#data-platform
+
+（1）2011年成立的Hortonworks是雅虎与硅谷风投公司Benchmark Capital合资组建。
+
+**（2）公司成立之初就吸纳了大约25名至30名专门研究Hadoop的雅虎工程师，上述工程师均在2005年开始协助雅虎开发Hadoop，贡献了Hadoop80%的代码。**
+
+（3）雅虎工程副总裁、雅虎Hadoop开发团队负责人Eric Baldeschwieler出任Hortonworks的首席执行官。
+
+（4）Hortonworks的主打产品是Hortonworks Data Platform（HDP），也同样是100%开源的产品，HDP除常见的项目外还包括了Ambari，一款开源的安装和管理系统。
+
+（5）HCatalog，一个元数据管理系统，HCatalog现已集成到Facebook开源的Hive中。Hortonworks的Stinger开创性的极大的优化了Hive项目。Hortonworks为入门提供了一个非常好的，易于使用的沙盒。
+
+（6）Hortonworks开发了很多增强特性并提交至核心主干，这使得Apache Hadoop能够在包括Window Server和Windows Azure在内的Microsoft Windows平台上本地运行。定价以集群为基础，每10个节点每年为12500美元。
+
+### 1.2.4 Hadoop的优势
+
+1） 高可靠性：Hadoop底层维护多个数据副本，所以即使Hadoop某个计算元素或存储出现故障，也不会导致数据的丢失。
+
+2） 高扩展性：在集群间分配任务数据，可方便的扩展数以千计的节点。
+
+3） 高效性：在MapReduce的思想下，Hadoop是并行工作的，以加快任务处理速度。
+
+4） 高容错性：能够自动将失败的任务重新分配。
+
+### 1.2.5 Hadoop组成
+
+![image.png](./assets/1650190520285-image.png)
+
+> Hadoop3.x 增加了纠错码技术（Erasure coding）简称EC,是一种编码容错技术。这种技术最早用于通信行业，数据传输中的数据恢复。它通过对数据进行分块，然后计算出校验数据，使得各个部分的数据产生关联性。
+> 当一部分数据块丢失时，可以通过剩余的数据块和校验计算出丢失的数据块。
+
+Hadoop从2.x开始，就开始分化了。逐渐演变成：HDFS，YARN，MapReduce三大应用模块，这三个
+应用模块分别的能力和作用是：
 
 ```md
-Namenode：响应客户端请求[参考原理](https://cloud.tencent.com/developer/article/1659296) ，只请求响应，不负责I/O处理(I/O容易宕机),处于安全机制；
+1. HDFS:  分布式文件系统，用来接解决海量大文件的存储问题
+2. MapReduce: 一套通用的用来解决海量大文件计算的编程模型API
+3. YARN: 资源调度/管理系统
 ```
 
-## 1.7 hadoop之MapReduce  :id=1-7
-
-MapReduce 是 Hadoop 框架的一个模块，其核心就是“先分再合，分而治之”，它把整个并行计算过程抽象成2个阶段：
-
-- Map（映射），负责“分”，就是把复杂的任务分解成若干个“简单的任务”来并行处理。可以拆分的前提是，这些小任务可以并行计算，彼此间几乎没有依赖关系。
-- Reduce（化简/归纳），负责“合”，就是把 Map 阶段的子结果合并成最终的结果。
-
-一个简单的 MapReduce 程序只需要指定 `map()`、`reduce()`、`input` 和 `output`，剩下的事由 Hadoop MapReduce 框架帮你完成。
-
-打一个比喻：
+其中需要主要的是：这三者之间的关系。彼此独立，又相互依赖。使用`MapReduce`的分布式编程API编写分布式计算应用程序，读取存储在`HDFS`上的海量大文件进行计算，由`YARN`提供计算资源。`HDFS`和`YARN`可以独立运行。主要表现在：
 
 ```md
-我们要统计图书馆中的1000个书架上的书，一个人统计，耗时会很久；
-
-我们找到1000个同学帮忙，每个人统计1个书架，记录好统计的结果 —— Map 过程；
-
-1000个同学都统计结束后，把所有结果再汇总到一起，就得到了最终的结果 —— Reduce 过程。
+1. 使用MapReduce编写的应用程序也可以运行在其他资源调度系统之上；
+2. 使用其他编程模型编写的应用程序，比如storm,Spark,Flink等也可运行在YARN集群上。
 ```
 
-## 1.8 本节思考题 :id=1-8
+所以称Hadoop是一个分布式的成熟解决方案。
+所以其实安装Hadoop,其实安装HDFS和YARN两个集群。HDFS和YARN都是一个一主多从的集群。
 
-- 1. NameNode存储数据吗?
+HDFS 集群：
 
-  **解答：** NameNode并不直接存储数据，NameNode 负责跟踪 HDFS 中所有与文件相关的元数据，例如文件名、块位置、文件许可和副本。从安全角度需要知悉的是，那些读写文件的 HDFS 客户端**总是**与 NameNode 通信的。
-- 2. NameNode和DataNode的关系
+```md
+一个NameNode主节点/管理节点。
+多个DataNode从节点/工作节点。
+```
 
-  **解答：** DataNode 负责在 HDFS 中对数据块进行存储和读取，NameNode 会告诉正在读取某文件的 HDFS 客户端，集群中的哪个 DataNode 拥有客户端请求的数据。
-- 3. 通过Java实现对HDFS的文件读写
+YARN 集群：
 
-     ```md
+```md
+一个ResourceManager主节点/管理节点
+多个NodeManager从节点/工作节点
+```
 
-     ```
+#### 1.2.5.1 HDFS 架构概述
 
+HDFS（Hadoop Distributed File System）的架构概述。
+
+1）NameNode (nn): 存储文件的元数据，如文件名，文件目录结构，文件属性（生成时间、副本数、文件权限），以及每个文件的块列表和块所在的DataNode等。
+
+2）DataNode(dn)：在本地文件系统存储文件块数据，以及块数据的校验和。
+
+3）Secondary NameNode(2nn)：用来监控HDFS状态的辅助后台程序，每隔一段时间获取HDFS元数据的快照。
+
+#### 1.2.5.2 YARN架构概述
+
+YARN架构概述
+
+![image.png](./assets/1650192150658-image.png)
+
+#### 1.2.5.3 MapReduce 架构概述
+
+MapReduce将计算过程分为两个阶段：**Map 和 Reduce**
+
+1) Map阶段并行处理输入数据
+2) Reduce阶段对Map结果进行汇总
+
+![image.png](./assets/1650192340139-image.png)
+
+## 1.3 大数据技术生态体系
+
+![image.png](./assets/1650192509456-image.png)
+
+1）Sqoop：Sqoop是一款开源的工具，主要用于在Hadoop、Hive与传统的数据库(MySql)间进行数据的传递，可以将一个关系型数据库（例如 ：MySQL，Oracle 等）中的数据导进到Hadoop的HDFS中，也可以将HDFS的数据导进到关系型数据库中。
+
+2）Flume：Flume是Cloudera提供的一个高可用的，高可靠的，分布式的海量日志采集、聚合和传输的系统，Flume支持在日志系统中定制各类数据发送方，用于收集数据；同时，Flume提供对数据进行简单处理，并写到各种数据接受方（可定制）的能力。
+
+3）Kafka：Kafka是一种高吞吐量的分布式发布订阅消息系统，有如下特性：
+
+（1）通过O(1)的磁盘数据结构提供消息的持久化，这种结构对于即使数以TB的消息存储也能够保持长时间的稳定性能。
+
+（2）高吞吐量：即使是非常普通的硬件Kafka也可以支持每秒数百万的消息。
+
+（3）支持通过Kafka服务器和消费机集群来分区消息。
+
+（4）支持Hadoop并行数据加载。
+
+4）Storm：Storm用于“连续计算”，对数据流做连续查询，在计算时就将结果以流的形式输出给用户。
+
+5）Spark：Spark是当前最流行的开源大数据内存计算框架。可以基于Hadoop上存储的大数据进行计算。
+
+6）Oozie：Oozie是一个管理Hdoop作业（job）的工作流程调度管理系统。
+
+7）Hbase：HBase是一个分布式的、面向列的开源数据库。HBase不同于一般的关系数据库，它是一个适合于非结构化数据存储的数据库。
+
+8）Hive：Hive是基于Hadoop的一个数据仓库工具，可以将结构化的数据文件映射为一张数据库表，并提供简单的SQL查询功能，可以将SQL语句转换为MapReduce任务进行运行。 其优点是学习成本低，可以通过类SQL语句快速实现简单的MapReduce统计，不必开发专门的MapReduce应用，十分适合数据仓库的统计分析。
+
+10）R语言：R是用于统计分析、绘图的语言和操作环境。R是属于GNU系统的一个自由、免费、源代码开放的软件，它是一个用于统计计算和统计制图的优秀工具。
+
+11）Mahout：Apache Mahout是个可扩展的机器学习和数据挖掘库。
+
+12）ZooKeeper：Zookeeper是Google的Chubby一个开源的实现。它是一个针对大型分布式系统的可靠协调系统，提供的功能包括：配置维护、名字服务、 分布式同步、组服务等。ZooKeeper的目标就是封装好复杂易出错的关键服务，将简单易用的接口和性能高效、功能稳定的系统提供给用户。
+
+13）Flink: 一个框架和分布式处理引擎，用于对无界和有界数据流进行有状态计算。Flink被设计在所有常见的集群环境中运行，以内存执行速度和任意规模来执行计算。
+
+## 1.4 Hadoop运行环境搭建 :id=1-4
+
+```
+### 版本选择
+
+现在 Hadoop 经历四个大版本：
+
+```md
+Hadoop-0.x # 古老的Hadoop，连YARN都没有，现在应该没有任何企业还在使用这么古老的Hadoop了
+hadoop-1.x # 基本淘汰的Hadoop版本。不用考虑
+hadoop-2.x # 现阶段主流的使用版本。比如Hadoop-2.6.5， hadoop-2.7.7， hadoop-2.8.5
+hadoop-3.x # 目前较新的Hadoop版本，提供了很多新特性，但是升级的企业还是比较少。
+```
+
+根据以上的说明和比较，根据我的了解，选择使用 Hadoop-2.7.7
+
+### 集群规划
+
+说到集群规划，那么我们需要了解一下关于Hadoop集群的几种模式。
+
+```md
+伪分布式
+分布式
+高可用
+联邦集群
+```
+
+主要有这么四种。当然企业中搭建的 Hadoop 集群都是高可用的分布式集群！
+
+所以这里讲的Hadoop集群的规划主要针对Hadoop分布式集群来进行说明。
+
+一台服务器：伪分布式
+
+
+| 节点名称 | Hadoop                                  | YARN                             |
+| ---------- | ----------------------------------------- | ---------------------------------- |
+| bigdate2 | NameNode + DataNode + SecondaryNamenode | ResouceManager+<br />NodeManager |
+
+三台服务器：
+
+
+| 节点名称 | Hadoop                       | YARN                                   |
+| ---------- | ------------------------------ | ---------------------------------------- |
+| bigdate2 | NameNode + DataNode 主节点   | NodeManager                            |
+| bigdate3 | DataNode + SecondaryNamenode | NodeManager                            |
+| bigdate4 | DataNode                     | ResouceManager主节点+<br />NodeManager |
+
+四台服务器：
+
+
+| 节点名称 | Hadoop                       | YARN           |
+| ---------- | ------------------------------ | ---------------- |
+| bigdate2 | NameNode                     | NodeManager    |
+| bigdate3 | DataNode + SecondaryNamenode | NodeManager    |
+| bigdate4 | DataNode                     | NodeManager    |
+| bigdate4 | DataNode                     | ResouceManager |
+
+如果有更多的服务器，那么可以按需分配集群角色。实际企业中，一般会将单独性能较好的机器作为集群的主节点。我们在这儿把HDFS和YARN集群的主节点分开安装的不同的节点，主要是为了降低个节点的压力。毕竟我们使用的是虚拟机呀。当然，也可以调整把他们安装在同一个节点。
+
+## 集群安装
+
+刚才讲集群规划的时候，提到了四种安装模式。
+
+```md
+伪分布式 # 主要用来测试学习，搭建快速 
+分布式 # 正儿八经的分布式集群。用来了解集群的工作机制，用于正儿八经的企业生产 
+高可用 # 现阶段流行的主要集群模式。因为避免Hadoop的SPOF问题。提高集群的可用性。 
+联邦集群 # 一些超大型企业可以使用的模式。主要为了应对超大规模的数据量对集群的主节点造 成的压力。
+```
+
+### 单机版环境搭建
+
+<nav>
+<a href="#一前置条件">一、前置条件</a><br/>
+<a href="#二配置-SSH-免密登录">二、配置 SSH 免密登录</a><br/>
+<a href="#三HadoopHDFS环境搭建">三、Hadoop(HDFS)环境搭建</a><br/>
+<a href="#四HadoopYARN环境搭建">四、Hadoop(YARN)环境搭建</a><br/>
+</nav>
+
+## 一、前置条件
+
+Hadoop 的运行依赖 JDK，需要预先安装;
+
+# Linux下JDK的安装
+
+> **系统环境**：centos 7.6
+>
+> **JDK 版本**：jdk 1.8.0_20
+
+### 1. 下载并解压
+
+在[官网](https://www.oracle.com/technetwork/java/javase/downloads/index.html) 下载所需版本的 JDK，这里我下载的版本为[JDK 1.8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) ,下载后进行解压：
+
+```shell
+[root@ java]# tar -zxvf jdk-8u201-linux-x64.tar.gz
+```
+
+### 2. 设置环境变量
+
+```shell
+[root@ java]# vi /etc/profile
+```
+
+添加如下配置：
+
+```shell
+export JAVA_HOME=/usr/java/jdk1.8.0_201  
+export JRE_HOME=${JAVA_HOME}/jre  
+export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib  
+export PATH=${JAVA_HOME}/bin:$PATH
+```
+
+执行 `source` 命令，使得配置立即生效：
+
+```shell
+[root@ java]# source /etc/profile
+```
+
+### 3. 检查是否安装成功
+
+```shell
+[root@ java]# java -version
+```
+
+显示出对应的版本信息则代表安装成功。
+
+```shell
+java version "1.8.0_201"
+Java(TM) SE Runtime Environment (build 1.8.0_201-b09)
+Java HotSpot(TM) 64-Bit Server VM (build 25.201-b09, mixed mode)
+
+```
+
+## 二、配置免密登录
+
+Hadoop 组件之间需要基于 SSH 进行通讯。
+
+#### 2.1 配置映射
+
+配置 ip 地址和主机名映射：
+
+```shell
+vim /etc/hosts
+# 文件末尾增加
+192.168.43.202  hadoop001
+```
+
+### 2.2  生成公私钥
+
+执行下面命令行生成公匙和私匙：
+
+```
+ssh-keygen -t rsa
+```
+
+### 3.3 授权
+
+进入 `~/.ssh` 目录下，查看生成的公匙和私匙，并将公匙写入到授权文件：
+
+```shell
+[root@@hadoop001 sbin]#  cd ~/.ssh
+[root@@hadoop001 .ssh]# ll
+-rw-------. 1 root root 1675 3 月  15 09:48 id_rsa
+-rw-r--r--. 1 root root  388 3 月  15 09:48 id_rsa.pub
+```
+
+```shell
+# 写入公匙到授权文件
+[root@hadoop001 .ssh]# cat id_rsa.pub >> authorized_keys
+[root@hadoop001 .ssh]# chmod 600 authorized_keys
+```
+
+## 三、Hadoop(HDFS)环境搭建
+
+```
+
+```
+
+## 1.5 本节思考题 :id=1-5
+
+**1. NameNode存储数据吗?**
+
+> NameNode并不直接存储数据，NameNode 负责跟踪 HDFS 中所有与文件相关的元数据，例如文件名、块位置、文件许可和副本。从安全角度需要知悉的是，那些读写文件的 HDFS 客户端**总是**与 NameNode 通信的。
+
+**2. NameNode和DataNode的关系**
+
+> DataNode 负责在 HDFS 中对数据块进行存储和读取，NameNode 会告诉正在读取某文件的 HDFS 客户端，集群中的哪个 DataNode 拥有客户端请求的数据。
+
+**3. 通过Java实现对HDFS的文件读写**
+
+```md
   // 创建目录
   @Test
   public void mkDir() throws Exception {
@@ -334,19 +564,16 @@ MapReduce 是 Hadoop 框架的一个模块，其核心就是“先分再合，�
     return null;
     }
 
-  ```
+```
 
+**4. 常用的HDFS命令有那些**
 
+> fsck: 检查文件的完整性
+> start-balancer.sh: 重新平衡HDFS
+> hdfs dfs -copyFromLocal 从本地磁盘复制文件到HDFS
 
-  ```
-- 4. 常用的HDFS命令有那些
-     **解答：**
-     fsck: 检查文件的完整性
-     start-balancer.sh: 重新平衡HDFS
-     hdfs dfs -copyFromLocal 从本地磁盘复制文件到HDFS
-- 5. hdfs上的副本在节点之间如何保存的
-     **解答：**
+**5. hdfs上的副本在节点之间如何保存的**
 
-  - 第一个 block 副本存放在 client 所在的 node 中（如果 client 不在集群范围内，则第一个 node 是随机选取 的，系统会尝试不选择那些太满或者太忙的 node）；
-  - 第二个副本放置在与第一个 node 不同机架的 node 中（近乎随机选择，系统会尝试不选择那些太满或者太忙 的 node）；
-  - 第三个副本放在与第二个副本同机架不同的 node 中。
+> 第一个 block 副本存放在 client 所在的 node 中（如果 client 不在集群范围内，则第一个 node 是随机选取 的，系统会尝试不选择那些太满或者太忙的 node）；
+> 第二个副本放置在与第一个 node 不同机架的 node 中（近乎随机选择，系统会尝试不选择那些太满或者太忙 的 node）；
+> 第三个副本放在与第二个副本同机架不同的 node 中。

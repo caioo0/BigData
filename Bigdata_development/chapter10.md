@@ -307,8 +307,6 @@ scp -r conf/ hadoop4:/opt/module/hbase
 
 [http://hadooo2:16010](http://linux01:16010)
 
-
-
 ## 学习资料
 
 1. https://www.w3cschool.cn/hbase_doc/hbase_doc-r6ew2vvl.html

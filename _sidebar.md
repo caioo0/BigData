@@ -1,6 +1,6 @@
 * [大数据开发实战](Bigdata_development/README.md)
   - [1.大数据概况及Hadoop生态系统](Bigdata_development/chapter01.md)
-  - [2.Hadoop环境构建](Bigdata_development/chapter02.md)
+  - [2.Hadoop分布式文件系统HDFS](Bigdata_development/chapter02.md)
   - [3.MapReduce 编程模型基础和实践](Bigdata_development/chapter03.md)
   - [4.Hive-数据仓库基础](Bigdata_development/chapter04.md)
   - [5.Hive-数据仓库进阶](Bigdata_development/chapter05.md)
