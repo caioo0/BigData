@@ -766,7 +766,7 @@ Region Split时机：
 
 ![image.png](./assets/1650165798698-image.png)
 
-## 9.7 参考资料
+## 9.6 参考资料
 
 1. 尚硅谷大数据之HBase
 2. https://www.runoob.com/mongodb/nosql.html
