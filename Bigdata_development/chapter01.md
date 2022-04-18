@@ -319,6 +319,7 @@ MapReduce将计算过程分为两个阶段：**Map 和 Reduce**
 ## 1.4 Hadoop运行环境搭建 :id=1-4
 
 版本选择 ，现在 Hadoop 经历四个大版本：
+
 ```
 Hadoop-0.x # 古老的Hadoop，连YARN都没有，现在应该没有任何企业还在使用这么古老的Hadoop了
 hadoop-1.x # 基本淘汰的Hadoop版本。不用考虑
@@ -394,37 +395,49 @@ hadoop-3.x # 目前较新的Hadoop版本，提供了很多新特性，但是升�
 一、前置条件
 
 Hadoop 的运行依赖 JDK，需要预先安装;
+
 - **Linux下JDK的安装**
+
 > **系统环境**：centos 7.6
 > **JDK 版本**：jdk 1.8.0_20
 
 1. 下载并解压
 
 在[官网](https://www.oracle.com/technetwork/java/javase/downloads/index.html) 下载所需版本的 JDK，这里我下载的版本为[JDK 1.8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html) ,下载后进行解压：
+
 ```shell
 [root@ java]# tar -zxvf jdk-8u201-linux-x64.tar.gz
 ```
 
 2. 设置环境变量
+
 ```shell
 [root@ java]# vi /etc/profile
 ```
+
 添加如下配置：
+
 ```shell
 export JAVA_HOME=/usr/java/jdk1.8.0_201  
 export JRE_HOME=${JAVA_HOME}/jre  
 export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib  
 export PATH=${JAVA_HOME}/bin:$PATH
 ```
+
 执行 `source` 命令，使得配置立即生效：
+
 ```shell
 [root@ java]# source /etc/profile
 ```
+
 3. 检查是否安装成功
+
 ```shell
 [root@ java]# java -version
 ```
+
 显示出对应的版本信息则代表安装成功。
+
 ```shell
 java version "1.8.0_201"
 Java(TM) SE Runtime Environment (build 1.8.0_201-b09)
@@ -438,20 +451,25 @@ Hadoop 组件之间需要基于 SSH 进行通讯。
 1. 配置映射
 
 配置 ip 地址和主机名映射：
+
 ```shell
 vim /etc/hosts
 # 文件末尾增加
 192.168.72.131  hadoop001
 ```
+
 2. 生成公私钥
 
 执行下面命令行生成公匙和私匙：
+
 ```
 ssh-keygen -t rsa
 ```
+
 3. 授权
 
 进入 `~/.ssh` 目录下，查看生成的公匙和私匙，并将公匙写入到授权文件：
+
 ```shell
 [root@@hadoop001 sbin]#  cd ~/.ssh
 [root@@hadoop001 .ssh]# ll
@@ -461,9 +479,138 @@ ssh-keygen -t rsa
 [root@hadoop001 .ssh]# cat id_rsa.pub >> authorized_keys
 [root@hadoop001 .ssh]# chmod 600 authorized_keys
 ```
-二、Hadoop 环境搭建  
 
-## 1.5 本节思考题 :id=1-5
+二、Hadoop 环境搭建
+
+这里使用的Hadoop版本为2.7.7。
+
+将该文件夹解压后，可以放置到自己喜欢的位置，如`/root/install`文件夹下。
+
+```shell
+tar -zxvf hadoop-2.7.2.tar.gz -C /root/install/
+
+```
+
+打开`/etc/profile`文件，命令如下：
+
+```shell
+sudo vi /etc/profile
+在文件末尾，添加如下内容：
+#hadoop
+HADOOP_HOME=/root/install/hadoop-2.7.7
+export HADOOP_HOME
+export HADOOP_CLASSPATH=`hadoop classpath`
+export HADOOP_CLASSPATH=$CLASSPATH:$HIVE_HOME/lib/*
+
+
+```
+
+对于单机安装，首先需要更改`hadoop-env.sh`文件，用于配置Hadoop运行的环境变量，命令如下：
+
+修改hadoop-env.sh文件配置
+
+```shell
+cd /root/install/hadoop-2.7.7
+vi etc/hadoop/hadoop-env.sh
+
+```
+
+在文件末尾，添加如下内容：
+
+```shell
+export JAVA_HOME=/root/install/jdk1.8.0_65
+
+
+```
+
+通过查看版本号命令验证是否安装成功，命令如下：
+
+```shell
+[root@hadoop5 hadoop-2.7.7]# hadoop version
+Hadoop 2.7.7
+Subversion Unknown -r c1aad84bd27cd79c3d1a7dd58202a8c3ee1ed3ac
+Compiled by stevel on 2018-07-18T22:47Z
+Compiled with protoc 2.5.0
+From source with checksum 792e15d20b12c74bd6f19a1fb886490
+This command was run using /root/install/hadoop-2.7.7/share/hadoop/common/hadoop-common-2.7.7.jar
+
+```
+
+## 1.5  Hadoop 测试案例 :id=1-5
+
+### 1.5.1 官方案例
+
+利用Hadoop自带的`WordCount`示例程序进行检查集群，并在主节点上进行如下操作，创建执行MapReduce任务所需的HDFS目录：
+
+```shell
+
+hadoop fs -mkdir /input
+
+```
+
+创建测试文件，命令如下：
+
+```shell
+vim test
+
+```
+
+在`test`文件中，添加以下内容：
+
+```shell
+Hello world!
+
+```
+
+使用`Shift+:`，输入`wq`后回车，保存并关闭编辑器。
+
+将测试文件上传到Hadoop HDFS集群目录，命令如下：
+
+```shell
+hadoop fs -put test /input
+
+```
+
+执行wordcount程序，命令如下：
+
+```shell
+hadoop jar /opt/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar wordcount /input /out
+
+```
+
+通过以下命令，查看执行结果：
+
+```shell
+hadoop fs -ls /out
+```
+
+执行结果如下：
+
+```
+Found 2 items
+-rw-r--r--    1 root supergroup       0 time /out/_SUCCESS
+-rw-r--r--    1 root supergroup      17 time /out/part-r-00000 
+
+```
+
+可以看到，结果中包含`_SUCCESS`文件，表示Hadoop集群运行成功。
+
+查看具体的输出结果，命令如下：
+
+```
+hadoop fs -text /out/part-r-00000
+
+```
+
+输出结果如下：
+
+```shell
+Hello   1
+world!  1
+
+```
+
+## 1.6 本节思考题 :id=1-6
 
 **1. NameNode存储数据吗?**
 
