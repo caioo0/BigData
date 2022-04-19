@@ -142,11 +142,9 @@ CLI（hive shell）、JDBC/ODBC(java访问hive)、WEBUI（浏览器访问hive）
 
 Hive通过给用户提供的一系列交互接口，接收到用户的指令(SQL)，使用自己的Driver，结合元数据(MetaStore)，将这些指令翻译成MapReduce，提交到Hadoop中执行，最后，将执行返回的结果输出到用户交互接口。
 
-
 ### 4.2.4 Hive和数据库比较
 
 由于 Hive 采用了类似SQL 的查询语言 HQL(Hive Query Language)，因此很容易将 Hive 理解为数据库。其实从结构上来看，Hive 和数据库除了拥有类似的查询语言，再无类似之处。本节将从多个方面来阐述 Hive 和数据库的差异。数据库可以用在 Online 的应用中，但是Hive 是为数据仓库而设计的，清楚这一点，有助于从应用角度理解 Hive 的特性。
-
 
 #### **4.2.4.1 查询语言**
 
@@ -180,8 +178,7 @@ Hive 在查询数据的时候，由于没有索引，需要扫描整个表，因
 
 由于Hive建立在集群上并可以利用MapReduce进行并行计算，因此可以支持很大规模的数据；对应的，数据库可以支持的数据规模较小。
 
-## 4.3 Hive 安装
-
+## 4.3 Hive安装和shell操作
 
 ### 4.3.1 **Hive安装地址**
 
@@ -197,30 +194,98 @@ https://cwiki.apache.org/confluence/display/Hive/GettingStarted
 
 http://archive.apache.org/dist/hive/
 
-
 ### 4.3.2 **单机环境部署**
 
 - 用途：测试，学习，快速使用
 
 ```md
-# 基本要求：启动hadoop
+# 基本要求：启动hadoop,mysql已安装
+
 1. 上传安装包
 apache-hive-2.3.6-bin.tar.gz
 
 2. 解压安装包
 tar -zxvf apache-hive-2.3.6-bin.tar.gz -C ../install/
 
-3、进入到bin目录，运行hive脚本 
+3. 修改配置 hive-site.xml
+<configuration>
+<property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:mysql://hadoop5:3306/hive?createDatabaseIfNotExist=true&verifyServerCertificate=false&useSSL=false</value>
+</property>
+
+<property>
+    <name>javax.jdo.option.ConnectionDriverName</name>
+    <value>com.mysql.jdbc.Driver</value>
+</property>
+
+<property>
+    <name>javax.jdo.option.ConnectionUserName</name>
+    <value>root</value>
+</property>
+
+<property>
+    <name>javax.jdo.option.ConnectionPassword</name>
+    <value>hadoop</value>
+</property>
+
+
+<property>
+    <name>hive.metastore.warehouse.dir</name>
+    <value>/user/hive/warehouse</value>
+</property>
+
+<property>
+    <name>dfs.webhdfs.enabled</name>
+    <value>true</value>
+</property>
+<property>
+    <name>hive.server2.webui.host</name>
+    <value>hadoop5</value>
+</property>
+
+<property>
+    <name>hive.server2.webui.port</name>
+    <value>15010</value>
+</property>
+<property>  
+  <name>hive.metastore.local</name>
+  <value>false</value>  
+</property>
+<property>  
+  <name>hive.metastore.uris</name>
+  <value>thrift://hadoop5:9083</value>  
+</property>
+<property>
+    <name>hive.metastore.schema.verification</name>
+    <value>false</value>
+</property>
+
+4. 一定要记得把Hadoop集群中的 core-site.xml 和 hdfs-site.xml 两个配置文件都放置在Hive安装目 录下conf目录中。
+ cp core-site.xml hdfs-site.xml ~/install/apache-hive-2.3.6-bin/conf/
+
+5、进入到bin目录，运行hive脚本 
 cd apache-hive-2.3.6-bin/bin 
 ./hive 
 
-4. 如果报错打开hadoop-2.7.7/etc/hadoop/文件加执行命令：
+6. 如果报错打开hadoop-2.7.7/etc/hadoop/文件加执行命令：
 
 cp core-site.xml hdfs-site.xml ~/install/apache-hive-2.3.6-bin/conf/
 
 4、测试使用 
 show databases;
 ```
+
+报错问题修复：
+
+hive> show databases; FAILED: SemanticException org.apache.hadoop.hive.ql.metadata.HiveException: java.lang.RuntimeException: Unable to instantiate org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient
+
+> 可能是hive的服务端没有打开
+> 1）hive --service metastore &
+> 2）然后Ctrl+C
+> 3）再hive,进去 show databases;
+>
+> 解答地址：https://blog.csdn.net/qq_35078688/article/details/86137440
 
 ### 4.3.3 **集群版环境构建**
 
@@ -421,22 +486,439 @@ hive-site.xml 配置文件：
 重启 Hiveserver2，访问 Web UI：http://hadoop5:15010
 ```
 
+### 4.3.4 Hive基本操作
 
-## 4.4 Hive核心概念
+（1）启动hive
 
-### 4.3.1 Hive数据类型
+```
+[root@hadoop5 apache-hive-2.3.6-bin]$ bin/hive
+```
 
-- 基本数据类型
+（2）查看数据库
+
+```
+hive> show databases;
+```
+
+（3）打开默认数据库
+
+```
+hive> use default;
+```
+
+（4）显示default数据库中的表
+
+```
+hive> show tables;
+```
+
+（5）创建一张表
+
+```
+hive> create table student(id int, name string);
+```
+
+（6）显示数据库中有几张表
+
+```
+hive> show tables;
+```
+
+（7）查看表的结构
+
+```
+hive> desc student;
+```
+
+（8）向表中插入数据
+
+```
+hive> insert into student values(1000,"ss");
+```
+
+（9）查询表中数据
+
+```
+hive> select * from student;
+```
+
+（10）退出hive
+
+```
+hive> quit;
+```
+
+### 4.3.4 将本地文件导入Hive案例
+
+将本地`/root/hdp/hive_stage/student.txt`这个目录下的数据导入到hive的student(id int, name string)表中。
+
+```text
+1001	zhangshan
+1002	lishi
+1003	zhaoliu
+```
+
+```sql
+[root@hadoop5 apache-hive-2.3.6-bin]# bin/hive
+hive> show databases;
+hive> use default;
+OK
+Time taken: 0.039 seconds
+hive> show tables;
+OK
+access_log
+access_log_first
+access_log_url_top
+info_ip
+ip_content
+log_content
+log_tmp1
+log_tmp2
+log_tmp3
+log_tmp4
+student
+Time taken: 0.058 seconds, Fetched: 11 row(s)
+hive> drop table student;
+OK
+Time taken: 0.6 seconds
+hive> show tables;
+OK
+access_log
+access_log_first
+access_log_url_top
+info_ip
+ip_content
+log_content
+log_tmp1
+log_tmp2
+log_tmp3
+log_tmp4
+Time taken: 0.042 seconds, Fetched: 10 row(s)
+hive> create table student(id int ,name string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
+OK
+Time taken: 0.571 seconds
+hive> load data local inpath '/root/hdp/hive_stage/student.txt' into table student;
+Loading data to table default.student
+OK
+Time taken: 1.563 seconds
+hive> select * from student;
+OK
+1001    zhangshan
+1002    lishi
+1003    zhaoliu
+Time taken: 3.097 seconds, Fetched: 3 row(s)
+hive> 
+
+```
+
+### 4.3.5 HiveJDBC访问
+
+#### 4.3.5.1 ****启动hiveserver****2****服务**
+
+```sql
+[root@hadoop5 hive]$ bin/hiveserver2
+```
+
+4.3.5.2 ****启动beeline**
+
+```
+[root@hadoop5 hive]$ bin/beeline
+
+Beeline version 1.2.1 by Apache Hive
+
+beeline>
+```
+
+4.3.5.3 ****连接hiveserver****2
+
+```
+beeline> !connect jdbc:hive2://hadoop5:10000（回车）
+
+Connecting to jdbc:hive2://hadoop5:10000
+
+Enter username for jdbc:hive2://hadoop5:10000: atguigu（回车）
+
+Enter password for jdbc:hive2://hadoop5:10000: （直接回车）
+
+Connected to: Apache Hive (version 1.2.1)
+
+Driver: Hive JDBC (version 1.2.1)
+
+Transaction isolation: TRANSACTION_REPEATABLE_READ
+
+0: jdbc:hive2://hadoop5:10000> show databases;
+
++----------------+--+
+
+| database_name  |
+
++----------------+--+
+
+| default        |
+
+| hive_db2       |
+
++----------------+--+
+
+```
+
+### 4.3.6 Hive常用交互命令
+
+```sql
+[root@hadoop5 apache-hive-2.3.6-bin]# bin/hive -help
+usage: hive
+ -d,--define <key=value>          Variable substitution to apply to Hive
+                                  commands. e.g. -d A=B or --define A=B
+    --database <databasename>     Specify the database to use
+ -e <quoted-query-string>         SQL from command line
+ -f <filename>                    SQL from files
+ -H,--help                        Print help information
+    --hiveconf <property=value>   Use value for given property
+    --hivevar <key=value>         Variable substitution to apply to Hive
+                                  commands. e.g. --hivevar A=B
+ -i <filename>                    Initialization SQL file
+ -S,--silent                      Silent mode in interactive shell
+ -v,--verbose                     Verbose mode (echo executed SQL to the
+                                  console)
+
+```
+
+1．“-e” 不进入hive的交互窗口执行sql语句
+
+```sql
+[root@hadoop5 apache-hive-2.3.6-bin]# bin/hive -e "select id from student;"
+OK
+1001
+1002
+1003
+Time taken: 7.306 seconds, Fetched: 3 row(s)
+
+```
+
+2．“-f”执行脚本中sql语句
+
+（1）在/root/hdp/hive_stage目录下创建hivef.sql文件
+
+```
+$ touch hivef.sql
+```
+
+文件中写入正确的sql语句
+
+```
+select * from student;
+```
+
+（2）执行文件中的sql语句
+
+```
+$ bin/hive -f /root/hdp/hive_stage/hivef.sql
+```
+
+（3）执行文件中的sql语句并将结果写入文件中
+
+```
+$ bin/hive -f /root/hdp/hive_stage/hivef.sql  > /root/hdp/hive_stage/hive_result.txt
+OK
+Time taken: 6.712 seconds, Fetched: 3 row(s)
+
+[root@hadoop5 apache-hive-2.3.6-bin]# cat  /root/hdp/hive_stage/hive_result.txt
+1001    zhangshan
+1002    lishi
+1003    zhaoliu
+```
+
+### 4.3.7 Hive其他命令操作
+
+1．在hive cli命令窗口中如何查看hdfs文件系统
+
+```
+hive> dfs -ls /;
+drwxr-xr-x   - root supergroup          0 2021-10-21 23:41 /hema
+drwxr-xr-x   - root supergroup          0 2021-08-01 20:48 /hive_stage
+```
+
+2．在hive cli命令窗口中如何查看本地文件系统
+
+```sql
+hive> ! ls /root/hdp/hive_stage;
+hivef.sql
+hive_result.txt
+student.txt
+```
+
+3. 查看在hive中输入的所有历史命令
+   （1）进入到当前用户的根目录/root或/home/<user>
+   （2）查看. hivehistory文件
+
+```
+[root@hadoop5 ~]$ cat .hivehistory
+```
+
+### 4.3.8 Hive常见属性配置
+
+#### 4.3.8.1 Hive数据仓库位置配置
+
+1）Default数据仓库的最原始位置是在hdfs上的：/user/hive/warehouse路径下。
+
+```shell
+[root@hadoop5 ~]# cd ..
+[root@hadoop5 /]# cd user/hive
+[root@hadoop5 hive]# ls
+warehouse
+
+```
+
+2）在仓库目录下，没有对默认的数据库default创建文件夹。如果某张表属于default数据库，直接在数据仓库目录下创建一个文件夹。
+
+3）修改default数据仓库原始位置（将hive-default.xml.template如下配置信息拷贝到hive-site.xml文件中）。
+
+```xml
+<property>
+<name>hive.metastore.warehouse.dir</name>
+<value>/user/hive/warehouse</value>
+<description>location of default database for the warehouse</description>
+</property>
+```
+
+配置同组用户有执行权限`bin/hdfs dfs -chmod g+w /user/hive/warehouse`
+
+#### 4.3.8.2 查询后信息显示配置
+
+1）在hive-site.xml文件中添加如下配置信息，就可以实现显示当前数据库，以及查询表的头信息配置。
+
+```xml
+<property>
+	<name>hive.cli.print.header</name>
+	<value>true</value>
+</property>
+
+<property>
+	<name>hive.cli.print.current.db</name>
+	<value>true</value>
+</property>
+```
+
+2）重启hive，对比差异`hive --service metastore &`
+
+```sql
+# 配置前
+hive> select * from student;
+OK
+1001    zhangshan
+1002    lishi
+1003    zhaoliu
+# 配置后
+hive (default)> select * from student;
+OK
+student.id      student.name
+1001    zhangshan
+1002    lishi
+1003    zhaoliu
+Time taken: 3.49 seconds, Fetched: 3 row(s)
+
+
+```
+
+#### 4.3.8.3 Hive 运行日志信息配置
+
+1. Hive的log默认存放在/tmp/root/hive.log目录下（当前用户名下）
+2. 将Hive的log存放在logs文件夹
+
+```xml
+
+   [root@hadoop5 conf]# pwd
+   /root/install/apache-hive-2.3.6-bin/conf
+
+   [root@hadoop5 conf]# ls 
+   beeline-log4j2.properties.template    hive-log4j2.properties.template
+
+   [root@hadoop5 conf]# mv hive-log4j2.properties.template hive-log4j.properties
+
+   [root@hadoop5 conf]# ls
+   beeline-log4j2.properties.template    hive-log4j.properties
+
+   [root@hadoop5 conf]# vi hive-log4j.properties
+   #property.hive.log.dir = ${sys:java.io.tmpdir}/${sys:user.name}
+   property.hive.log.dir = /root/install/apache-hive-2.3.6-bin/logs
+
+```
+
+#### 4.3.8.4 参数配置方式
+
+1．查看当前所有的配置信息
+
+```
+hive>set;
+```
+
+2．参数的配置三种方式
+
+（1）配置文件方式
+默认配置文件：`hive-default.xml`
+
+用户自定义配置文件：`hive-site.xml`
+
+注意：用户自定义配置会覆盖默认配置。另外，Hive也会读入Hadoop的配置，因为Hive是作为Hadoop的客户端启动的，Hive的配置会覆盖Hadoop的配置。配置文件的设定对本机启动的所有Hive进程都有效。
+（2）命令行参数方式
+
+启动Hive时，可以在命令行添加-hiveconf param=value来设定参数。
+
+例如：
+
+```
+[root@hadoop5 apache-hive-2.3.6-bin]# bin/hive -hiveconf mapred.reduce.tasks=10;
+```
+
+注意：仅对本次hive启动有效
+
+查看参数设置：
+
+```
+hive (default)> set mapred.reduce.tasks;
+```
+
+（3）参数声明方式
+
+可以在HQL中使用SET关键字设定参数
+
+例如：
+
+```
+hive (default)> set mapred.reduce.tasks=100;
+```
+
+注意：仅对本次hive启动有效。
+
+查看参数设置
+
+```
+hive (default)> set mapred.reduce.tasks;
+```
+
+上述三种设定方式的优先级依次递增。即配置文件<命令行参数<参数声明。注意某些系统级的参数，例如log4j相关的设定，必须用前两种方式设定，因为那些参数的读取在会话建立以前已经完成了。
+
+## 4.4 Hive数据类型
+
+### 4.4.1 基本数据类型
 
 `Hive`表中的列支持以下基本数据类型：
 
-- **integers(整型) :** TINYINT：1字节的有符号整数； SMALLINT：2字节的有符号整数； **INT：4字节的有符号整数**； BIGINT：8字节的有符号整数
-- **Boolean(布尔型) :** BOOLEAN:TRUE/FALSE
-- **Floating point numbers(浮点型) :** FLOAT:单精度浮点型；<br> DOUBLE:双精度浮点型
-- **Fixed point numbers（定点数）:** **DECIMAL：用户自定义精度定点数，比如 DECIMAL(7,2)**
-- **String types（字符串）:** STRING：指定字符集的字符序列； VARCHAR：具有最大长度限制的字符序列； CHAR：固定长度的字符序列;
-- **Date and time types（日期时间类型）:** TIMESTAMP：时间戳； TIMESTAMP WITH LOCAL TIME ZONE：时间戳，纳秒精度； DATE：日期类型
-- **Binary types（二进制类型）:**  BINARY：字节序列
+
+| Hive数据类型 | Java数据类型 | 长度                                                 | 例子                                     |
+| -------------- | -------------- | ------------------------------------------------------ | ------------------------------------------ |
+| TINYINT      | byte         | 1byte有符号整数                                      | 20                                       |
+| SMALINT      | short        | 2byte有符号整数                                      | 20                                       |
+| *INT         | int          | 4byte有符号整数                                      | 20                                       |
+| *BIGINT      | long         | 8byte有符号整数                                      | 20                                       |
+| BOOLEAN      | boolean      | 布尔类型，true或者false                              | TRUE  FALSE                             |
+| FLOAT        | float        | 单精度浮点数                                         | 3.14159                                  |
+| *DOUBLE      | double       | 双精度浮点数                                         | 3.14159                                  |
+| *STRING      | string       | 字符系列。可以指定字符集。可以使用单引号或者双引号。 | ‘now is the time’ “for all good men” |
+| TIMESTAMP    |              | 时间类型                                             |                                          |
+| BINARY       |              | 字节数组                                             |                                          |
+
+对于Hive的String类型相当于数据库的varchar类型，该类型是一个可变的字符串，不过它不能声明其中最多能存储多少个字符，理论上它可以存储2GB的字符数。
 
 > 注：TIMESTAMP和TIMESTAMP WITH LOCAL TIME ZONE的区别如下：
 > TIMESTAMP WITH LOCAL TIME ZONE：用户提交TIMESTAMP给数据库时，会被转换成数据库所在的时区来保存。查询时，则按照查询客户端的不同，转换为查询客户端所在时区的时间。
@@ -468,136 +950,7 @@ hive-site.xml 配置文件：
 | Views          | shortcut of rows of data     | n/a               |
 | index          | statistics of data           | folder with files |
 
-### 4.3.3 Hive Database
-
-- 数据库是用于类似目的或属于同一组的表的集合
-- 如果未指定数据库（使用`database_name`）,则默认使用默认数据库`default`
-- 默认数据库表目录位置：`/user/hive/warehouse`
-
-```md
-hive-site.xml 
-
-<property> 
-
-<name>hive.metastore.warehouse.dir</name> 
-
-<value>/data/wapage/hive/warehouse</value> 
-
-<description>location of default database for the warehouse</description> 
-
-</property> 
-```
-
-```
-数据库的语法操作： 
-
-create database if not exists myhivebook; 
-
-use myhivebook; 
-
-show databases; 
-
-describe database default; --more details than ’show’, such as location 
-
-alter database myhivebook set owner user zs;
-
---级联删除，如果数据库下面有表的话，也可以删除 
-
-drop database if exists myhivebook cascade;
-```
-
-### 4.3.4 Hive Tables
-
-- External tables（外部表）：数据保存在Location关键字指定的HDFS路径中。由于DROP表（元数据）不会删除数据，因此Hive不会完全管理数据
-- Internal Tables/Managed Table （内部表/管理表）：数据保存在默认路径中，例如/user/hive/warehouse/employee。 (数据完全由Hive管理，因为DROP表（元数据）将删除数据)
-- 最大的区别：删除表的时候会不会删除数据。
-
-  **思考问题？**
-
-  1. what is internal and external tables ? 90%
-  2. what is key difference between them ? 80%
-  3. what is best practice to use them? 20%(最佳实践)
-
-     - 用来处理原始数据和客户给出的树（不能修改数据，使用外部表）
-     - 需要进行共享数据的时候使用外部表
-     - 对数据清晰和转换的时候会使用内部表
-
-  **Hive 建表基础语句**
-
-  ```sql
-  CREATE EXTERNAL TABLE IF NOT EXISTS employee_external ( 
-
-  name string, 
-
-  work_place ARRAY<string>, 
-
-  sex_age STRUCT<sex:string,age:int>, 
-
-  skills_score MAP<string,int>, 
-
-  depart_title MAP<STRING,ARRAY<STRING>> 
-
-  )
-
-  COMMENT 'This is an external table' 
-
-  ROW FORMAT DELIMITED FIELDS TERMINATED BY '|' 
-
-  COLLECTION ITEMS TERMINATED BY ',' 
-
-  MAP KEYS TERMINATED BY ':' 
-
-  STORED AS TEXTFILE 
-
-  LOCATION '/user/data/employee_data/';
-
-  --查看表结构 
-
-  desc table 
-
-  desc formatted table 
-
-  show create table
-  ```
-
-  - **建表和数据类型实践**
-
-  ```sql
-  show tables; 
-
-  show tables '*sam*'; show tables '*sam|lily*' ; 
-
-  show table extended like 'o*'; 
-
-  desc [formatted|extended] table_name 
-
-  show create table table_name; 
-
-  select work_place,work_place[1] from employee_external; 
-
-  select sex_age.age from employee_external; 
-
-  select name, skills_score['DB'] from employee_external; 
-
-  select ame, depart_title['Product'][0] from employee_external; 
-
-  ```
-- 复杂数据类型操作示例
-
-下面是一个基本数据类型和复杂数据类型的使用示例：
-
-```sql
-CREATE TABLE students(
-  name      STRING,   -- 姓名
-  age       INT,      -- 年龄
-  subject   ARRAY<STRING>,   -- 学科
-  score     MAP<STRING,FLOAT>,  -- 各个学科考试成绩
-  address   STRUCT<houseNumber:int, street:STRING, city:STRING, province:STRING>  -- 家庭居住地址
-) ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t";
-
-```
-
-### 4.3.2 Hive数据模型
+### 4.4.2 Hive数据模型
 
 `Hive`的数据都是存储在`HDFS`上的，默认有一个根目录，在`Hive-site.xml`中可以进行配置数据的存储路径。`Hive`数据模型的含义是，描述`Hive`组织、管理和操作数据的方式。`Hive`包含如下4种数据模型：
 
@@ -625,24 +978,24 @@ CREATE TABLE students(
 4. **分桶**
      分桶和分区的区别在于：分桶是针对数据文件本身进行拆分，根据表中字段（例如，编号ID）的值，经过`hash`计算规则，将数据文件划分成指定的若干个小文件。分桶后，`HDFS`中的数据文件会变为多个小文件。分桶的优点是**优化join查询**和 **方便抽样查询** 。
 
-## 4.4 Hive系统结构
+## 4.5 Hive系统结构
 
   `Hive`主要由用户接口模块、驱动模型以及元数据存储模块3个模块组成，其系统架构如下图所示：
 
 ![](./images/ch6.3.png)
 
-### 4.4.1 用户接口模块
+### 4.5.1 用户接口模块
 
   用户接口模块包括`CLI`、`Hive`网页接口（Hive Web Interface，HWI）、`JDBC`、`ODBC`、`Thrift Server`等，主要实现外部应用对`Hive`的访问。用户可以使用以下两种方式来操作数据：
 
 * **CLI** （command-line shell）：`Hive`自带的一个命令行客户端工具，用户可以通过`Hive`命令行的方式来操作数据；
 * **HWI** （Thrift/JDBC）：`HWI`是`Hive`的一个简单网页，`JDBC`、`ODBS`和`Thrift Server`可以向用户提供编程访问的接口。用户可以按照标准的`JDBC`的方式，通过`Thrift`协议操作数据。
 
-### 4.4.2 驱动模块
+### 4.5.2 驱动模块
 
   驱动模块（Driver）包括编译器、优化器、执行器等，所采用的执行引擎可以是 `MapReduce`、`Tez`或`Spark`等。当采用`MapReduce`作为执行引擎时，驱动模块负责把 `HiveQL`语句转换成一系列`MapReduce`作业，所有命令和查询都会进入驱动模块，通过该模块对输入进行解析编译，对计算过程进行优化，然后按照指定的步骤执行。
 
-### 4.4.3 元数据存储模块
+### 4.5.3 元数据存储模块
 
 * **元数据：**
     元数据（metadata）是 **描述数据的数据** ，对于`Hive`来说，元数据就是用来描述`HDFS`文件和表的各种对应关系（位置关系、顺序关系、分隔符）。`Hive`的元数据存储在**关系数据库**中（`Hive`内置的是`Derby`、第三方的是`MySQL`），`HDFS`中存储的是数据。在`Hive`中，所有的元数据默认存储在`Hive`内置的`Derby`数据库中，但由于`Derby`只能有一个实例，也就是说不能有多个命令行客户端同时访问，所以在实际生产环境中，通常使用` MySQL`代替`Derby`。
@@ -676,7 +1029,7 @@ CREATE TABLE students(
 
   其优点是把`Metastore`服务独立出来，可以安装到远程的服务器集群里，从而解耦`Hive`服务和`Metastore`服务，保证`Hive`的稳定运行。
 
-### 4.4.4 HQL的执行流程
+### 4.5.4 HQL的执行流程
 
   `Hive`在执行一条`HQL`语句时，会经过以下步骤：
 
@@ -689,9 +1042,9 @@ CREATE TABLE students(
 
 > 关于 Hive SQL 的详细工作原理可以参考美团技术团队的文章：[HiveQL编译过程](https://tech.meituan.com/2014/02/12/hive-sql-to-mapreduce.html)
 
-## 4.5 分区表
+## 4.6 分区表
 
-### 4.5.1 概念
+### 4.6.1 概念
 
 Hive 中的表对应为`HDFS`上的指定目录，在查询数据时候，默认会对全表进行扫描，这样时间和性能的消耗都非常大。
 
@@ -699,13 +1052,13 @@ Hive 中的表对应为`HDFS`上的指定目录，在查询数据时候，默认
 
 > 这里说明以下分区表并hive独有的概念，实际上这个概念非常常见。比如在我们常用的Oracle数据库中，当表中的数据量不断增大，查询数据的速度就会下降，这时也可以对表进行分区。表进行分区后，逻辑上表仍然是一张完整的表，只是将表中的数据存放到多个表空间（物理文件上），这样查询数据时，就不必要每次都扫描整张表，从而提升查询性能。
 
-### 4.5.2 使用场景
+### 4.6.2 使用场景
 
 通常，在管理大规模数据集的时候都需要进行分区，比如将日志文件按天进行分区，从而保证数据细粒度的划分，使得查询性能得到提升。
 
 > 分区HDFS上表目录的子目录，数据按照分区存储在子目录中。
 
-### 4.5.3 创建分区表
+### 4.6.3 创建分区表
 
 **在Hive中可以使用`PARTITIONED BY`子句创建分区表。**表可以包含一个或多个分区列，程序会为分区列中的每个不同值组合创建单独的数据目录。下面的我们创建一张雇员表作为测试：
 
@@ -724,7 +1077,7 @@ ROW FORMAT DELIMITED FIELDS TERMINATED BY "\t"
 LOCATION '/hive/emp_partition';
 ```
 
-### 4.5.4 加载数据到分区表
+### 4.6.4 加载数据到分区表
 
 加载数据到分区表时候必须要指定数据所处的分区：
 
@@ -735,7 +1088,7 @@ LOAD DATA LOCAL INPATH "/usr/file/emp20.txt" OVERWRITE INTO TABLE emp_partition 
 LOAD DATA LOCAL INPATH "/usr/file/emp30.txt" OVERWRITE INTO TABLE emp_partition PARTITION (deptno=30)
 ```
 
-### 4.5.5 查看分区目录
+### 4.6.5 查看分区目录
 
 这时候我们直接查看表目录，可以看到表目录下存在两个子目录，分别是`deptno=20`和`deptno=30`,这就是分区目录，分区目录下才是我们加载的数据文件。
 
@@ -745,15 +1098,15 @@ LOAD DATA LOCAL INPATH "/usr/file/emp30.txt" OVERWRITE INTO TABLE emp_partition 
 
 这时候当你的查询语句的`where`包含`deptno=20`,则就去对应的分区目录下进行查找，而不用扫描全表。
 
-## 4.6 分桶表
+## 4.7 分桶表
 
-### 4.6.1
+### 4.7.1
 
 分区提供了一个隔离数据和优化查询的可行方案，但是**并非所有的数据集都可以形成合力的分区**，分区的数量也不是越多越好，过多的分区条件可能会导致很多分区上没有数据。同时`Hive`会限制动态分区可以创建的最大分区数，用来避免过多分区文件对文件系统产生负担。鉴于以上原因，**Hive还提供了一种更加细粒度的数据拆分方案：分桶表（buket table）**。
 
 **分桶表会将指定列的值进行哈希散列，并对bucket(桶数量)取余，然后存储到对应的bucket(桶)中。**
 
-### 4.6.2 理解分桶表
+### 4.7.2 理解分桶表
 
 单从概念上理解分桶表可能会比较晦涩，其实和分区一样，分桶这个概念同样不是Hive独有的，对于Java开发人员而言，这可能是一个每天都会用到的概念，因为Hive中的分桶概念和Java数据结构中的HashMap的分桶概念是一致的。
 
@@ -761,7 +1114,7 @@ LOAD DATA LOCAL INPATH "/usr/file/emp30.txt" OVERWRITE INTO TABLE emp_partition 
 
 当调用 HashMap 的 put() 方法存储数据时，程序会先对 key 值调用 hashCode() 方法计算出 hashcode，然后对数组长度取模计算出 index，最后将数据存储在数组 index 位置的链表上，链表达到一定阈值后会转换为红黑树 (JDK1.8+)。下图为 HashMap 的数据结构图：
 
-### 4.6.3 创建分桶表
+### 4.7.3 创建分桶表
 
 **在 Hive 中，我们可以通过 ****`CLUSTERED BY`**** 指定分桶列，并通过 ****`SORTED BY`** ** 指定桶中数据的排序参考列** 。下面为分桶表建表语句示例：
 
@@ -780,7 +1133,7 @@ LOAD DATA LOCAL INPATH "/usr/file/emp30.txt" OVERWRITE INTO TABLE emp_partition 
     LOCATION '/hive/emp_bucket';
 ```
 
-### 4.6.4 加载数据到分桶表
+### 4.7.4 加载数据到分桶表
 
 这里直接使用 `Load` 语句向分桶表加载数据，数据时可以加载成功的，但是数据并不会分桶。
 
@@ -804,13 +1157,13 @@ INSERT INTO TABLE emp_bucket SELECT *  FROM emp;  --这里的 emp 表就是一�
 
 ![img](./images/2020-10-19-4uPN0p.jpg)
 
-### 4.6.5 查看分桶文件
+### 4.7.5 查看分桶文件
 
 bucket(桶) 本质上就是表目录下的具体文件：
 
 ![img](./images/2020-10-19-Ntef1L.jpg)
 
-## 4.7 分区表和分桶表结合使用
+## 4.8 分区表和分桶表结合使用
 
 分区表和分桶表的本质都是将数据按照不同粒度进行拆分，从而使得在查询时候不必扫描全表，只需要扫描对应的分区或分桶，从而提升查询效率。两者可以结合起来使用，从而保证表数据在不同粒度上都能得到合理的拆分。下面是 Hive 官方给出的示例：
 
