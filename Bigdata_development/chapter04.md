@@ -1,14 +1,5 @@
 # 第四章 Apache Hive基础实战
 
-**本节目标**
-
-- 了解Hive的作用和优势
-- 了解Hive的基本架构
-- 了解Hive的数据类型
-- 了解Hive的数据库和表操作
-- 理解Hive的数据分区
-- 理解Hive的数据分桶
-
 ## 4.1 数据仓库
 
 ### 4.1.1 为什么要有数据仓库
@@ -18,6 +9,7 @@
 ![](./images/ch6.0.1.png)
 
 数据的作用有两个：**操作型记录的保存**和**分析型决策的制定**
+
 - 操作型记录的保存意味着企业通常不必维护历史数据，只需要修改数据以反映最新的状态；
 - 分析型决策意味着企业需要保存历史的数据，从而可以更精准的来评估现有状况进行决策；
 
@@ -64,33 +56,49 @@
 
 ### 4.2.1 概述
 
-**Hive是建立在Hadoop之上的一种数仓工具。**该工具的功能是将**结构化、半结构化**的数据文件映射为一张**数据库表**，基于数据库表，提供了一种类似`SQL` 的查询模型（`HQL`）,它具有最小的学习曲线，用于访问和分析存储在`Hadoop`文件中的大型数据集。
+Hive:  由Facebook开源用于解决海量结构化日志的数据统计。
+
+**Hive是建立在Hadoop之上的一种数仓工具。**该工具的功能是将**结构化、半结构化**的数据文件映射为一张**数据库表**，并提供了一种类似`SQL` 的查询功能（`HQL`）。
 
 `Hive`本身并不具备存储功能，其核心是将`HQL`转换为`MapReduce`程序，然后将程序提交到`Hadoop`集群中执行。
 
-![img](./images/ch6.1.1.png)
+本质是：将HQL转化成MapReduce程序。
 
-**特点：**
+![image.png](./assets/1650347564047-image.png)
 
-1. 提供简单和优化的模型，编码少于MR（提供了类似`SQL`的查询语言`HiveQL`，两者都是基于SQL92标准,底层会自动转化为MapReduce）,使得精通`SQL`却不了解`Java`编程的人也能很好地进行大数据分析；
-2. 灵活性高，可以自定义用户函数（UDF）和存储格式；
-3. `Hive`支持在不同的计算框架上运行:`mapreduce`,`tez(比MapReduce的性能快了50倍)`，有超大的数据设计的计算和存储能力，集群扩展容易；
-4. `Hive`支持在HDFS和HBase上进行临时查询数据。
-5. 用于ETL和BI工具的成熟JDBC和ODBC驱动程序；
-6. 统一的元数据管理，可以`presto`/`impala`/`sparksql`等共享数据；
-7. 执行延迟高，不适合做数据的实时处理，但适合做海量数据的离线处理；
+1）Hive 处理的数据存储在HDFS
 
-### 4.2.2 产生背景
+2）Hive 分析数据底层**默认实现**是MapReduce
 
-![img](./images/ch6.1.2.png)
+3）执行程序运行在Yarn上
 
-`Hive`的产生背景主要有两个：
+### 4.2.2 Hive 的优缺点
 
-**- 使用成本高：** 使用`MapReduce`直接处理数据时，需要掌握`Java`等编程语言，学习成本较高，而且使用`MapReduce`不容易实现复杂查询；
+#### 4.2.2.1 优点
 
-**- 建立分析型数仓的需求：**`Hive`支持类`SQL`的查询以及支持自定义函数，可以作为数据仓库的工具。
+1）操作接口采用类SQL语法，提供快速开发的能力（简单、容易上手）。
 
-`Hive`利用 `HDFS`存储数据，使用`MapReduce`查询分析数据。将`SQL`转换为`MapReduce`程序，从而完成对数据的分析决策。
+2）避免了去写MapReduce，减少开发人员的学习成本。
+
+3）Hive的执行延迟比较高，因此Hive常用于数据分析，对实时性要求不高的场合。
+
+4）Hive优势在于处理大数据，对于处理小数据没有优势，因为Hive的执行延迟比较高。
+
+5）Hive支持用户自定义函数，用户可以根据自己的需求来实现自己的函数。
+
+#### 4.2.2.2 缺点
+
+1．Hive的HQL表达能力有限
+
+（1）迭代式算法无法表达
+
+（2）数据挖掘方面不擅长
+
+2．Hive的效率比较低
+
+（1）Hive自动生成的MapReduce作业，通常情况下不够智能化
+
+（2）Hive调优比较困难，粒度较粗
 
 ### 4.2.3 当前Hive的主流版本
 
@@ -102,9 +110,95 @@
   - hive-2.x 现行主流的hive使用版本，现行稳定的hive-2.x版本中，我们选择使用hive-2.3.6
   - HDP（商业版大数据环境）2.6.3内置的hive为1.2.1
 
-### 4.2.4 Hive集群构建
+### 4.2.3 Hive架构原理
 
-**单机版本环境构建**
+![image.png](./assets/1650347889792-image.png)
+
+1．用户接口：Client
+
+CLI（hive shell）、JDBC/ODBC(java访问hive)、WEBUI（浏览器访问hive）
+
+2．元数据：Metastore
+
+元数据包括：表名、表所属的数据库（默认是default）、表的拥有者、列/分区字段、表的类型（是否是外部表）、表的数据所在目录等；
+
+默认存储在自带的derby数据库中，推荐使用MySQL存储Metastore
+
+3．Hadoop
+
+使用HDFS进行存储，使用MapReduce进行计算。
+
+4．驱动器：Driver
+
+（1）解析器（SQL Parser）：将SQL字符串转换成抽象语法树AST，这一步一般都用第三方工具库完成，比如antlr；对AST进行语法分析，比如表是否存在、字段是否存在、SQL语义是否有误。
+
+（2）编译器（Physical Plan）：将AST编译生成逻辑执行计划。
+
+（3）优化器（Query Optimizer）：对逻辑执行计划进行优化。
+
+（4）执行器（Execution）：把逻辑执行计划转换成可以运行的物理计划。对于Hive来说，就是MR/Spark。
+
+![image.png](./assets/1650347943094-image.png)
+
+Hive通过给用户提供的一系列交互接口，接收到用户的指令(SQL)，使用自己的Driver，结合元数据(MetaStore)，将这些指令翻译成MapReduce，提交到Hadoop中执行，最后，将执行返回的结果输出到用户交互接口。
+
+
+### 4.2.4 Hive和数据库比较
+
+由于 Hive 采用了类似SQL 的查询语言 HQL(Hive Query Language)，因此很容易将 Hive 理解为数据库。其实从结构上来看，Hive 和数据库除了拥有类似的查询语言，再无类似之处。本节将从多个方面来阐述 Hive 和数据库的差异。数据库可以用在 Online 的应用中，但是Hive 是为数据仓库而设计的，清楚这一点，有助于从应用角度理解 Hive 的特性。
+
+
+#### **4.2.4.1 查询语言**
+
+由于SQL被广泛的应用在数据仓库中，因此，专门针对Hive的特性设计了类SQL的查询语言HQL。熟悉SQL开发的开发者可以很方便的使用Hive进行开发。
+
+#### **4.2.4.2 数据存储位置**
+
+Hive 是建立在 Hadoop 之上的，所有 Hive 的数据都是存储在 HDFS 中的。而数据库则可以将数据保存在块设备或者本地文件系统中。
+
+#### **4.2.4.3 数据更新**
+
+由于Hive是针对数据仓库应用设计的，而数据仓库的内容是读多写少的。因此，Hive中不建议对数据的改写，所有的数据都是在加载的时候确定好的。而数据库中的数据通常是需要经常进行修改的，因此可以使用 INSERT INTO …  VALUES 添加数据，使用 UPDATE … SET修改数据。
+
+#### **4.2.4.4 索引**
+
+Hive在加载数据的过程中不会对数据进行任何处理，甚至不会对数据进行扫描，因此也没有对数据中的某些Key建立索引。Hive要访问数据中满足条件的特定值时，需要暴力扫描整个数据，因此访问延迟较高。由于 MapReduce 的引入， Hive 可以并行访问数据，因此即使没有索引，对于[大数据](http://lib.csdn.net/base/hadoop "Hadoop知识库")量的访问，Hive 仍然可以体现出优势。数据库中，通常会针对一个或者几个列建立索引，因此对于少量的特定条件的数据的访问，数据库可以有很高的效率，较低的延迟。由于数据的访问延迟较高，决定了 Hive 不适合在线数据查询。
+
+### **4.2.4.5 执行**
+
+Hive中大多数查询的执行是通过 Hadoop 提供的 MapReduce 来实现的。而数据库通常有自己的执行引擎。
+
+#### **4.2.4.6 执行延迟**
+
+Hive 在查询数据的时候，由于没有索引，需要扫描整个表，因此延迟较高。另外一个导致 Hive 执行延迟高的因素是 MapReduce框架。由于MapReduce 本身具有较高的延迟，因此在利用MapReduce 执行Hive查询时，也会有较高的延迟。相对的，数据库的执行延迟较低。当然，这个低是有条件的，即数据规模较小，当数据规模大到超过数据库的处理能力的时候，Hive的并行计算显然能体现出优势。
+
+#### **4.2.4.7 可扩展性**
+
+由于Hive是建立在Hadoop之上的，因此Hive的可扩展性是和Hadoop的可扩展性是一致的（世界上最大的Hadoop 集群在 Yahoo!，2009年的规模在4000 台节点左右）。而数据库由于 ACID 语义的严格限制，扩展行非常有限。目前最先进的并行数据库 [Oracle](http://lib.csdn.net/base/oracle "Oracle知识库") 在理论上的扩展能力也只有100台左右。
+
+#### **4.2.4.8 数据规模**
+
+由于Hive建立在集群上并可以利用MapReduce进行并行计算，因此可以支持很大规模的数据；对应的，数据库可以支持的数据规模较小。
+
+## 4.3 Hive 安装
+
+
+### 4.3.1 **Hive安装地址**
+
+1．Hive官网地址
+
+http://hive.apache.org/
+
+2．文档查看地址
+
+https://cwiki.apache.org/confluence/display/Hive/GettingStarted
+
+3．下载地址
+
+http://archive.apache.org/dist/hive/
+
+
+### 4.3.2 **单机环境部署**
 
 - 用途：测试，学习，快速使用
 
@@ -120,11 +214,15 @@ tar -zxvf apache-hive-2.3.6-bin.tar.gz -C ../install/
 cd apache-hive-2.3.6-bin/bin 
 ./hive 
 
+4. 如果报错打开hadoop-2.7.7/etc/hadoop/文件加执行命令：
+
+cp core-site.xml hdfs-site.xml ~/install/apache-hive-2.3.6-bin/conf/
+
 4、测试使用 
 show databases;
 ```
 
-**集群版环境构建**
+### 4.3.3 **集群版环境构建**
 
 ```md
 基本要求：
@@ -323,122 +421,8 @@ hive-site.xml 配置文件：
 重启 Hiveserver2，访问 Web UI：http://hadoop5:15010
 ```
 
-### 4.2.5 Hive 元数据管理
 
-- 为了支持schema和数据分区等功能，Hive将元数据保存在关系型数据库中。
-- 默认情况下，hive将元数据保存在关系型数据库中。
-  - 基于缺省Derby的非常适合测试
-  - 用户之间不共享架构，因为每个用户都有自己的嵌入式Derby实例
-  - 存储在`metastore_db`目录中，该目录位于启动配置单元的目录中
-- 可以轻松切换另一个sql安装，如MySQL,Oracle。
-- 作为Hive的一部分的HCatalog将Hive元数据暴露给其他生态系统。
-- Hive3.0以上的版本，元数据是默认保存在Hbase里面，解决了HA的问题。
-
-### 4.2.6 Hive体系架构
-
-![img.png](./images/ch3.2.6.png)
-
-Note：解释一下经常遇到的`hiveServer1`、`hiveServer2`?早期版本的hiveServer(即hiveServer1)因使用Thrift接口的限制，不能处理多于一个客户端的并发请求，在hive-0.11.0版本中重写了hiveServer代码(hiveServer2)，支持了多客户端的并发和认证，并且为开放API客户端如`JDBC`、`ODBC`提供了更好的支持。
-
-- 用户结构主要有三个：`CLI(command line interface)命令行`，`JDBC`和`Web UI`,`CLI`是开发过程中常用的接口，在hive server2 提供新的命令beeline,使用sqlline语法
-- metaStore:hive的元数据结构描述信息库，可选用不同的关系型数据库来存储，通过配置文件修改、查看数据库配置信息。
-- Driver:解释器、编译器、优化器完成`HQL`查询语句从语法分析、词法分析、编译、优化以及查询计划的生成。生成的查询计划存储在HDFS中，并在随后由`MapReduce`调用执行。
-- Hive的数据存储在HDFS中，大部分的查询，计算由MapReduce完成
-  - select * from emp;->操作不会执行mapreduce
-  - select count(*) from emp; -> 执行mapreduce操作
-
-**Hive Interface - CLI 和 Beeline模式的区别**
-
-- 有两种工具：Beeline和命令行(CLI)
-- 有两种模式：命令行模式和交互模式
-
-
-| purpose(作用)     | HiveServer2 Beeline          | HiveServer1 CLI          |
-| ------------------- | ------------------------------ | -------------------------- |
-| Server Connection | beeline -u -n -p             | hive -h -p               |
-| help              | beeline -h or beeline --help | hive -H                  |
-| Run Query         | beeline -e beeline -f        | hive -e hive -f          |
-| Define Variable   | beeline --hivevar key=value  | hive --hivevar key=value |
-
-
-| Enter Mode    | beeline                     | hive               |
-| --------------- | ----------------------------- | -------------------- |
-| Connect       | !connect                    | N/A                |
-| List Tables   | !table                      | show tables;       |
-| List Columns  | !column <table_name>        | desc table_name;   |
-| Run Query     |                             |                    |
-| Save Result   | !record <file_name> !record | N/A                |
-| Run Shell CMD | !sh ls                      | !ls;               |
-| Run DFS CMD   | dfs -ls                     | dfs -ls;           |
-| Run SQL File  | !run<file_name>             | source<file_name>; |
-| Check Version | !dbinfo                     | !hive --version;   |
-| Quit Mode     | !quit                       | quit;              |
-
-Purpose HiveServer2 Beeline HiveServer1 CLI
-
-**熟悉HDP-Hive环境**
-
-```md
-Hive Interface – 其他使用环境
-
-Hive Web Interface (As part of Apache Hive)
-
---进入Hive cli
-
-hive -e ：执行指定的SQL语句
-
-hive -f ：执行指定的SQL脚本
-
-hive -e "show databases”
-
-echo "show databases" > demo.sql && hive -f demo.sql && rm -f demo.sql
-
---进入hive beeline
-
-hive --service hiveserver2 开启服务
-
-beeline -u jdbc:hive2://hadoop5:10000/db10 -n root -- 使用beeline连接hive
-
-```
-
-**Hive Interface - 其他使用环境**
-
-- Hive Web Interface(As part of Apache Hive)
-- Hue(Cloudera)
-- Ambari Hive View(hortonworks)
-- Zeppelin - Hive
-- JDBC/ODBC (ETL工具，商业智能工具，集成开发环境)
-
-### 4.2.7 Hive与Hadoop生态系统
-
-下图描述了当采用`MapReduce`作为执行引擎时，`Hive`与`Hadoop`生态中其他组件的关系。
-
-![image-20211225161347381](./images/ch6.1.3.png)
-
-**- Hive与Hadoop生态的联系**
-
-`HDFS`作为高可靠的底层存储方式，可以存储海量数据。`MapReduce`对这些海量数据进行批处理，实现高性能计算。`Hive`架构位于`MapReduce`、`HDFS`之上，其自身并不存储和处理数据，而是分别借助于`HDFS`和`MapReduce`实现数据的存储和处理，用`HiveQL`语句编写的处理逻辑，最终都要转换成`MapReduce`任务来运行。`pig`可以作为`Hive`的替代工具，它是一种数据流语言和运行环境，适用于在`Hadoop`平台上查询半结构化数据集，常用于数据抽取(`ETL`)部分，即将外部数据装载到`Hadoop`集群中，然后转换为用户需要的数据格式。
-
-**- Hive与HBase的区别**
-
-`HBase`是一个面向列式存储、分布式、可伸缩的数据库，它可以提供数据的实时访问功能，而`Hive`只能处理静态数据，主要是`BI`报表数据。就设计初衷而言，在`Hadoop`上设计`Hive`,是为了减少复杂`MapReduce`应用程序的编写工作，在`Hadoop`上设计`HBase`是为了实现对数据的实时访问。所以，`HBase`与`Hive`的功能是互补的，它实现了`Hive`不能提供的功能。
-
-### 4.2.8 **Hive与传统数据库的对比**
-
-`Hive`在很多方面和传统数据库类似，但是，它的底层依赖的是`HDFS`和`MapReduce`(或`tez`、`spark`)。以下将从各个方面，对`Hive`和传统数据库进行对比分析。
-
-
-| 对比内容 | Hive                  | 传统数据库     |
-| ---------- | ----------------------- | ---------------- |
-| 数据存储 | HDFS                  | 本地文件系统   |
-| 索引     | 支持有限索引          | 支持复杂索引   |
-| 分区     | 支持                  | 支持           |
-| 执行引擎 | MapReduce、Tez、Spark | 自身的执行引擎 |
-| 执行延迟 | 高                    | 低             |
-| 扩展性   | 好                    | 有限           |
-| 数据规模 | 大                    | 小             |
-
-## 4.3 Hive核心概念
+## 4.4 Hive核心概念
 
 ### 4.3.1 Hive数据类型
 
