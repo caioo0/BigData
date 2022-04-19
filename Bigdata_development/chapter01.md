@@ -574,7 +574,7 @@ hadoop fs -put test /input
 执行wordcount程序，命令如下：
 
 ```shell
-hadoop jar /opt/hadoop/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar wordcount /input /out
+hadoop jar /root/install/hadoop-2.7.7/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.7.7.jar wordcount /input /out
 
 ```
 
@@ -610,7 +610,11 @@ world!  1
 
 ```
 
-## 1.6 本节思考题 :id=1-6
+
+
+
+
+## 1.6 本节思考题 :id=1-7
 
 **1. NameNode存储数据吗?**
 

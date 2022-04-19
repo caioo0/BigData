@@ -1,0 +1,6 @@
+com\mapreduce\WordcountDriver.class
+com\mapreduce\WordcountReducer.class
+com\Max\temp\MaxTemperatureReducer.class
+com\Max\temp\MaxTemperature.class
+com\Max\temp\MaxTemperatureMapper.class
+com\mapreduce\WordcountMapper.class
