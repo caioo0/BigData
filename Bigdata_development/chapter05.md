@@ -1981,9 +1981,9 @@ SET hive.exec.mode.local.auto=true;
 
 ## 5.8 案例实战
 
-案例源码:`code/chapter05`
+git源码见:`code/chapter05`
 
-数据百度网盘：`https://pan.baidu.com/s/1KN4tmDTB0pIXR4Q0ZBQA-w` 提取码：`2022`
+百度网盘下载链接：`https://pan.baidu.com/s/1xD6d7N69lq_YujUDW19Zww` 提取码：`ba6w`
 
 ### 5.8.1 数据结构
 
