@@ -267,40 +267,40 @@ hive (default)> desc formatted emp_external
               > ;
 OK
 col_name        data_type       comment
-# col_name              data_type               comment         
-             
-empno                   int                                     
-ename                   string                                  
-job                     string                                  
-mgr                     int                                     
-hiredate                timestamp                               
-sal                     decimal(7,2)                            
-comm                    decimal(7,2)                            
-deptno                  int                                     
-             
-# Detailed Table Information         
-Database:               default              
-Owner:                  root                 
+# col_name              data_type               comment   
+       
+empno                   int                               
+ename                   string                            
+job                     string                            
+mgr                     int                               
+hiredate                timestamp                         
+sal                     decimal(7,2)                      
+comm                    decimal(7,2)                      
+deptno                  int                               
+       
+# Detailed Table Information   
+Database:               default        
+Owner:                  root           
 CreateTime:             Tue Apr 19 22:52:05 CST 2022   
-LastAccessTime:         UNKNOWN              
-Retention:              0                    
+LastAccessTime:         UNKNOWN        
+Retention:              0              
 Location:               hdfs://hadoop5:8020/hive/emp_external    # 存放位置 
 Table Type:             EXTERNAL_TABLE     # 标识外部表   
-Table Parameters:            
-        EXTERNAL                TRUE            
-        transient_lastDdlTime   1650379925      
-             
-# Storage Information        
+Table Parameters:      
+        EXTERNAL                TRUE      
+        transient_lastDdlTime   1650379925  
+       
+# Storage Information  
 SerDe Library:          org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe   
-InputFormat:            org.apache.hadoop.mapred.TextInputFormat     
+InputFormat:            org.apache.hadoop.mapred.TextInputFormat   
 OutputFormat:           org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat   
-Compressed:             No                   
-Num Buckets:            -1                   
-Bucket Columns:         []                   
-Sort Columns:           []                   
-Storage Desc Params:         
-        field.delim             \t              
-        serialization.format    \t              
+Compressed:             No             
+Num Buckets:            -1             
+Bucket Columns:         []             
+Sort Columns:           []             
+Storage Desc Params:   
+        field.delim             \t        
+        serialization.format    \t        
 Time taken: 0.1 seconds, Fetched: 34 row(s)
 
 ```
@@ -413,42 +413,74 @@ hive (default)> load data local inpath '/root/hdp/hive_stage/emp.txt' into table
 ### 5.1.7 管理表与外部表的互相转换
 
 1）查询表的类型
+
 ```
 hive (default)> desc formatted student2;
 
 Table Type: MANAGED_TABLE
 ```
+
 （2）修改内部表student2为外部表
+
 ```
 alter table student2 set tblproperties('EXTERNAL'='TRUE');
 ```
+
 （3）查询表的类型
+
 ```
 hive (default)> desc formatted student2;
 
 Table Type: EXTERNAL_TABLE
 ```
+
 （4）修改外部表student2为内部表
+
 ```
 alter table student2 set tblproperties('EXTERNAL'='FALSE');
 ```
+
 （5）查询表的类型
+
 ```
 hive (default)> desc formatted student2;
 
 Table Type: MANAGED_TABLE
 ```
+
 注意：`('EXTERNAL'='TRUE')`和`('EXTERNAL'='FALSE')`为固定写法，区分大小写！
 
+（6）重命名表
+
+```text
+alter table student3 rename to student2;
+```
+
+（7）增加/修改/替换列信息
+
+```text
+ALTER TABLE name RENAME TO new_name
+ALTER TABLE name ADD COLUMNS (col_spec[, col_spec ...])
+ALTER TABLE name DROP [COLUMN] column_name
+ALTER TABLE name CHANGE column_name new_name new_type
+ALTER TABLE name REPLACE COLUMNS (col_spec[, col_spec ...])
+```
+
+具体操作，可以参照[此处](https://blog.csdn.net/helloxiaozhe/article/details/80749094)
+
 #### 5.1.8 分区表
+
 分区表实际上就是对应一个HDFS文件系统上的独立的文件夹，该文件夹下该分区所有的数据文件。**hive中的分区就是分目录**，把一个大的数据集根据业务需要分割成小的数据集。在查询通过where子句中的表达式选择查询所需要的指定的分区，这样的查询效率会提高很多。
 1．引入分区表（需要根据日期对日志进行管理）
+
 ```text
 /user/hive/warehouse/log_partition/20170702/20170702.log
 /user/hive/warehouse/log_partition/20170703/20170703.log
 /user/hive/warehouse/log_partition/20170704/20170704.log
 ```
+
 2. 创建分区表语法
+
 ```sql
 create table dept_partition(
 deptno int, dname string, loc string
@@ -456,7 +488,9 @@ deptno int, dname string, loc string
 partitioned by (month string)
 row format delimited fields terminated by '\t';
 ```
+
 3. 加载数据到分区表中
+
 ```sql
 hive (default)> load data local inpath '/root/hdp/hive_stage/dept.txt' into table default.dept_partition partition(month='202201');
 Loading data to table default.dept_partition partition (month=202201)
@@ -472,7 +506,9 @@ OK
 Time taken: 1.023 seconds
 
 ```
+
 4. 查看数据
+
 ```shell
 [root@hadoop5 hive_stage]# hadoop fs -ls /user/hive/warehouse/dept_partition
 Found 3 items
@@ -480,7 +516,9 @@ drwxrwxrwx   - root supergroup          0 2022-04-20 00:09 /user/hive/warehouse/
 drwxrwxrwx   - root supergroup          0 2022-04-20 00:09 /user/hive/warehouse/dept_partition/month=202202
 drwxrwxrwx   - root supergroup          0 2022-04-20 00:09 /user/hive/warehouse/dept_partition/month=202203
 ```
+
 5. 查询分区表中的数据
+
 ```shell
 hive (default)> select * from dept_partition where month='202201';
 OK
@@ -506,11 +544,11 @@ dept_partition.deptno   dept_partition.dname    dept_partition.loc      dept_par
 30      SALES   1900    202203
 40      OPERATIONS      17001   202203
 Time taken: 0.276 seconds, Fetched: 4 row(s)
-hive (default)> select * from dept_partition where month='202203'
-              > union 
-              > select * from dept_partition where month='202202'
-              > union
-              > select * from dept_partition where month='202201';
+hive (default) select * from dept_partition where month='202203'
+              union 
+              select * from dept_partition where month='202202'
+              union
+              select * from dept_partition where month='202201';
 OK
 _u2.deptno      _u2.dname       _u2.loc _u2.month
 10      ACCOUNTING      1700    202201
@@ -527,7 +565,9 @@ _u2.deptno      _u2.dname       _u2.loc _u2.month
 40      OPERATIONS      17001   202203
 Time taken: 77.985 seconds, Fetched: 12 row(s)
 ```
+
 6．增加分区
+
 ```shell
 #创建单个分区
 hive (default)> alter table dept_partition add partition(month='202204') ;
@@ -538,17 +578,23 @@ hive (default)> alter table dept_partition add partition(month='202205') partiti
 OK
 Time taken: 0.182 seconds
 ```
+
 7. 删除分区
+
 ```shell
 # 删除分区
 hive (default)> alter table dept_partition drop partition (month='202204');
 hive (default)> alter table dept_partition drop partition (month='202205'), partition (month='202206');
 ```
+
 8. 显示多少分区
+
 ```shell
 show partitions dept_partition;
 ```
+
 8. 查看分区表结构
+
 ```shell
 #管理表信息时查看
 hive (default)> desc formatted dept_partition;
@@ -600,6 +646,48 @@ drwxrwxrwx   - root supergroup          0 2022-04-20 00:22 /user/hive/warehouse/
 drwxrwxrwx   - root supergroup          0 2022-04-20 00:22 /user/hive/warehouse/dept_partition/month=202206
 # 外部表的HDFS文件依然存在；
 ```
+
+9. 创建二级分区表
+
+```text
+hive (default)> create table dept_partition2(
+               deptno int, dname string, loc string
+               )
+               partitioned by (month string, day string)
+               row format delimited fields terminated by '\t';
+```
+
+10. 加载数据到二级分区表
+
+```text
+load data local inpath '/root/hdp/hive_stage/dept.txt' into table default.dept_partition2 partition(month='202203', day='13');
+```
+
+> 注意：二级分区会出现查询不到数据问题，注意修复；
+
+11. 分区排序（Distribute By）
+    Distribute By：类似MR中partition，进行分区，结合sort by使用。
+    注意，Hive要求DISTRIBUTE BY语句要写在SORT BY语句之前。
+    对于distribute by进行测试，一定要分配多reduce进行处理，否则无法看到distribute by的效果。
+    案例实操：
+    （1）先按照部门编号分区，再按照员工编号降序排序。
+
+```
+hive (default)> set mapreduce.job.reduces=3;
+hive (default)> insert overwrite local directory '/opt/module/datas/distribute-result' select * from emp distribute by deptno sort by empno desc;
+```
+
+12. Cluster By
+    当distribute by和sorts by字段相同时，可以使用cluster by方式。
+    cluster by除了具有distribute by的功能外还兼具sort by的功能。但是排序只能是升序排序，不能指定排序规则为ASC或者DESC。
+    1）以下两种写法等价
+
+```
+hive (default)> select * from emp cluster by deptno;
+hive (default)> select * from emp distribute by deptno sort by deptno;
+```
+
+注意：按照部门编号分区，不一定就是固定死的数值，可以是20号和30号部门分到一个分区里面去。
 
 #### 5.1.9 分桶表
 
@@ -916,6 +1004,14 @@ ast_value()
 LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] 
 INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
 ```
+
+（1）load data:表示加载数据
+（2）local:表示从本地加载数据到hive表；否则从HDFS加载数据到hive表
+（3）inpath:表示加载数据的路径
+（4）overwrite:表示覆盖表中已有数据，否则表示追加
+（5）into table:表示加载到哪张表
+（6）student:表示具体的表
+（7）partition:表示上传到指定分区
 
 * `LOCAL` 关键字代表从本地文件系统加载文件，省略则代表从 HDFS 上加载文件：
 * 从本地文件系统加载文件时， `filepath` 可以是绝对路径也可以是相对路径 (建议使用绝对路径)；
@@ -1883,3 +1979,160 @@ SET hive.exec.mode.local.auto=true;
 
 因为我们测试的数据集很小，所以你再次去执行上面涉及 MR 操作的查询，你会发现速度会有显著的提升。
 
+## 5.8 案例实战
+
+案例源码:`code/chapter05`
+
+数据百度网盘：`https://pan.baidu.com/s/1KN4tmDTB0pIXR4Q0ZBQA-w` 提取码：`2022`
+
+### 5.8.1 数据结构
+
+1．视频表
+
+
+| 字段        | 备注       | 详细描述               |
+| ------------- | ------------ | ------------------------ |
+| video id    | 视频唯一id | 11位字符串             |
+| uploader    | 视频上传者 | 上传视频的用户名String |
+| age         | 视频年龄   | 视频在平台上的整数天   |
+| category    | 视频类别   | 上传视频指定的视频分类 |
+| length      | 视频长度   | 整形数字标识的视频长度 |
+| views       | 观看次数   | 视频被浏览的次数       |
+| rate        | 视频评分   | 满分5分                |
+| ratings     | 流量       | 视频的流量，整型数字   |
+| conments    | 评论数     | 一个视频的整数评论数   |
+| related ids | 相关视频id | 相关视频的id，最多20个 |
+
+2．用户表
+
+
+| 字段     | 备注         | 字段类型 |
+| ---------- | -------------- | ---------- |
+| uploader | 上传者用户名 | string   |
+| videos   | 上传视频数   | int      |
+| friends  | 朋友数量     | int      |
+
+### 5.8.2 需求描述
+
+统计硅谷影音视频网站的常规指标，各种TopN指标：
+--统计视频观看数Top10
+--统计视频类别热度Top10
+--统计视频观看数Top20所属类别以及类别包含的Top20的视频个数
+--统计视频观看数Top50所关联视频的所属类别Rank
+--统计每个类别中的视频热度Top10
+--统计每个类别中视频流量Top10
+--统计上传视频最多的用户Top10以及他们上传的观看次数在前20视频
+--统计每个类别视频观看数Top10
+
+### 5.8.3 数据准备
+
+#### 1. 创建表
+
+创建表：gulivideo_ori，gulivideo_user_ori,
+创建表：gulivideo_orc，gulivideo_user_orc
+
+gulivideo_ori：
+
+```
+create table gulivideo_ori(
+    videoId string, 
+    uploader string, 
+    age int, 
+    category array<string>, 
+    length int, 
+    views int, 
+    rate float, 
+    ratings int, 
+    comments int,
+    relatedId array<string>)
+row format delimited 
+fields terminated by "\t"
+collection items terminated by "&"
+stored as textfile;
+```
+
+gulivideo_user_ori：
+
+```
+create table gulivideo_user_ori(
+    uploader string,
+    videos int,
+    friends int)
+row format delimited 
+fields terminated by "\t" 
+stored as textfile;
+```
+
+然后把原始数据插入到orc表中
+gulivideo_orc：
+
+```
+create table gulivideo_orc(
+    videoId string, 
+    uploader string, 
+    age int, 
+    category array<string>, 
+    length int, 
+    views int, 
+    rate float, 
+    ratings int, 
+    comments int,
+    relatedId array<string>)
+row format delimited fields terminated by "\t" 
+collection items terminated by "&" 
+stored as orc;
+```
+
+gulivideo_user_orc：
+
+```
+create table gulivideo_user_orc(
+    uploader string,
+    videos int,
+    friends int)
+row format delimited 
+fields terminated by "\t" 
+stored as orc;
+```
+
+#### 2. ETL原始数据
+
+```text
+# 文件路径执行
+[root@hadoop5 hdp]# hadoop fs -put hive_stage hive_stage
+# hadoop路径执行
+[root@hadoop5 hadoop-2.7.7]#  hadoop jar share/hadoop/mapreduce/guli-video-1.0-SNAPSHOT.jar com.atguigu.mr.ETLDriver hive_stage/guiliVideo/video/2008/0222 hive_stage/guiliVideo/output/video/2008/0222
+```
+
+#### 3.导入ETL后的数据
+
+gulivideo_ori：
+
+```text
+hive (default)> load data  inpath "hive_stage/guiliVideo/output/video/2008/0222/" into table gulivideo_ori;
+```
+
+gulivideo_user_ori：
+
+```text
+load data  inpath "hive_stage/guiliVideo/user/2008/0903/" into table gulivideo_user_ori;
+```
+
+向ORC表插入数据
+gulivideo_orc：
+
+```
+insert into table gulivideo_orc select * from gulivideo_ori;
+```
+
+gulivideo_user_orc：
+
+```
+insert into table gulivideo_user_orc select * from gulivideo_user_ori;
+```
+
+### 5.8.4 业务分析
+
+## 参考资料
+
+1.[Hive列转行 (Lateral View + explode)详解](https://zhuanlan.zhihu.com/p/115913870)
