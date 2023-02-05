@@ -6,6 +6,7 @@
 - 了解Hive的UDF，自定义函数
 - 掌握Hive的性能调优
 
+
 ## 6.1 事务处理
 
 Apache Hive 0.13 版本引入了事务特性，能够在 Hive 表上实现 ACID 语义，包括 INSERT/UPDATE/DELETE/MERGE 语句、增量数据抽取等。
@@ -278,9 +279,35 @@ select count(*) from test_transaction;
 - Hive 的事务功能尚属于实验室功能，并不建议用户直接上生产系统，因为目前它还有诸多的限制，如只支持 ORC 文件格式，建表必须分桶等，使用起来没有那么方便，另外该功能的稳定性还有待进一步验证。
 - 如果对于数据一致性不在乎，可以完全关闭 Hive 的 Concurrency 功能关闭，即设置 hive.support.concurrency 为 false，这样 Hive 的并发读写将没有任何限制。
 
-## 6.2 Hive的UDF (未完待续)
+## 6.2 Hive 高级查询
 
-（未完待续）
+### 6.2.1 排序
+
+#### 1. 全局排序（order by）
+
+Oder By : 全局排序，一个Reduce 默认 ASC (升序)
+```sql
+select * from emp order by sal;
+select * from emp order by sal desc;
+select ename, sal*2 twosal from emp order by twosal;
+select ename, deptno, sal from emp order by deptno, sal ;
+```
+#### 2. 每个MapReduce内部排序（Sort By）
+Sort By：每个Reducer内部进行排序，对全局结果集来说不是排序。
+
+**设置和查看reduce个数**
+```text
+hive (default)> set mapreduce.job.reduces=3;
+hive (default)> set mapreduce.job.reduces;
+mapreduce.job.reduces=3
+```
+**根据部门编号降序查看员工信息**
+```sql
+select * from emp sort by empno desc;
+```
+**将查询结果导入到文件中（按照部门编号降序排序）**
+```sql
+```
 
 
 ## 6.3 学习参考
