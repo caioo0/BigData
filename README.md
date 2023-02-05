@@ -31,4 +31,7 @@
     - [22.Flink-Streaming WasterMark核心设计与实践](Bigdata_development/chapter22.md)
 
 
+## 推荐资料
+1. [大数据入门指南](https://github.com/heibaiying/BigData-Notes)
+2. 
 
